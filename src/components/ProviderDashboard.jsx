@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  BarChart, Bar, LineChart, Line, ComposedChart,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell, Customized, ReferenceLine
 } from 'recharts';
 
@@ -101,6 +102,22 @@ const CUMULATIVE_DATA = (() => {
     };
   });
 })();
+
+/* Injectables KPI data — dual-axis combo chart */
+const INJECTABLES_DATA = [
+  { month: 'Jan', avgSyringes: 2.3, avgBTXUnits: 38 },
+  { month: 'Feb', avgSyringes: 2.5, avgBTXUnits: 41 },
+  { month: 'Mar', avgSyringes: 2.1, avgBTXUnits: 36 },
+  { month: 'Apr', avgSyringes: null, avgBTXUnits: null },
+  { month: 'May', avgSyringes: null, avgBTXUnits: null },
+  { month: 'Jun', avgSyringes: null, avgBTXUnits: null },
+  { month: 'Jul', avgSyringes: null, avgBTXUnits: null },
+  { month: 'Aug', avgSyringes: null, avgBTXUnits: null },
+  { month: 'Sep', avgSyringes: null, avgBTXUnits: null },
+  { month: 'Oct', avgSyringes: null, avgBTXUnits: null },
+  { month: 'Nov', avgSyringes: null, avgBTXUnits: null },
+  { month: 'Dec', avgSyringes: null, avgBTXUnits: null },
+];
 
 const YTD_SALES = MONTHLY_SALES.reduce((s, d) => s + (d.sales || 0), 0);
 const MONTHS_ELAPSED = MONTHLY_SALES.filter(d => d.sales !== null).length;
@@ -592,6 +609,50 @@ const PerformanceView = ({ onNavigate }) => {
               <Line type="monotone" dataKey="platinum" name="Platinum Tier" stroke={TIERS.platinum.color} strokeWidth={2} strokeDasharray="6 3" dot={false} />
               <Line type="monotone" dataKey="diamond" name="Diamond Tier" stroke={TIERS.diamond.color} strokeWidth={2} strokeDasharray="6 3" dot={false} />
             </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Dual-Axis Combo Chart — Avg Syringe & BTX Units */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Injectables Efficiency — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Average syringes per injectables appointment vs average BTX units per Botox appointment</p>
+          <ResponsiveContainer width="100%" height={340}>
+            <ComposedChart data={INJECTABLES_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis
+                yAxisId="left"
+                orientation="left"
+                domain={[0, 4]}
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                label={{ value: 'Avg Syringes', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 11, fill: T.muted, fontFamily: T.sans } }}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                domain={[0, 60]}
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                label={{ value: 'Avg BTX Units', angle: 90, position: 'insideRight', offset: 10, style: { fontSize: 11, fill: T.muted, fontFamily: T.sans } }}
+              />
+              <Tooltip
+                formatter={(v, name) => {
+                  if (v === null) return ['—', name];
+                  return name === 'Avg Syringes / Injectables Appt' ? [v.toFixed(1), name] : [Math.round(v) + ' units', name];
+                }}
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
+              />
+              <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
+              <Bar yAxisId="left" dataKey="avgSyringes" name="Avg Syringes / Injectables Appt" fill={T.gold} radius={[3, 3, 0, 0]} maxBarSize={40}>
+                {INJECTABLES_DATA.map((d, i) => (
+                  <Cell key={i} fill={d.avgSyringes !== null ? T.gold : '#e5e7eb'} />
+                ))}
+              </Bar>
+              <Line yAxisId="right" type="monotone" dataKey="avgBTXUnits" name="Avg BTX Units / Botox Appt" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+            </ComposedChart>
           </ResponsiveContainer>
         </Card>
 
