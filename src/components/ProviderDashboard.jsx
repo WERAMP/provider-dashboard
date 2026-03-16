@@ -119,6 +119,22 @@ const INJECTABLES_DATA = [
   { month: 'Dec', avgSyringes: null, avgBTXUnits: null },
 ];
 
+/* Revenue efficiency data — multi-line chart */
+const REVENUE_EFFICIENCY_DATA = [
+  { month: 'Jan', avgRevPerPatient: 412, avgRevPerNewPatient: 385, revPerNetSchedHr: 148 },
+  { month: 'Feb', avgRevPerPatient: 445, avgRevPerNewPatient: 410, revPerNetSchedHr: 162 },
+  { month: 'Mar', avgRevPerPatient: 398, avgRevPerNewPatient: 372, revPerNetSchedHr: 141 },
+  { month: 'Apr', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
+  { month: 'May', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
+  { month: 'Jun', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
+  { month: 'Jul', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
+  { month: 'Aug', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
+  { month: 'Sep', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
+  { month: 'Oct', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
+  { month: 'Nov', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
+  { month: 'Dec', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
+];
+
 const YTD_SALES = MONTHLY_SALES.reduce((s, d) => s + (d.sales || 0), 0);
 const MONTHS_ELAPSED = MONTHLY_SALES.filter(d => d.sales !== null).length;
 
@@ -612,7 +628,7 @@ const PerformanceView = ({ onNavigate }) => {
           </ResponsiveContainer>
         </Card>
 
-        {/* Dual-Axis Combo Chart — Avg Syringe & BTX Units */}
+        {/* Dual-Axis Line Chart — Avg Syringe & BTX Units */}
         <Card style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Injectables Efficiency — Monthly</h3>
           <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Average syringes per injectables appointment vs average BTX units per Botox appointment</p>
@@ -645,14 +661,31 @@ const PerformanceView = ({ onNavigate }) => {
                 }}
                 contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
               />
-              <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
-              <Bar yAxisId="left" dataKey="avgSyringes" name="Avg Syringes / Injectables Appt" fill={T.gold} radius={[3, 3, 0, 0]} maxBarSize={40}>
-                {INJECTABLES_DATA.map((d, i) => (
-                  <Cell key={i} fill={d.avgSyringes !== null ? T.gold : '#e5e7eb'} />
-                ))}
-              </Bar>
+              <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
+              <Line yAxisId="left" type="monotone" dataKey="avgSyringes" name="Avg Syringes / Injectables Appt" stroke={T.gold} strokeWidth={3} dot={{ r: 5, fill: T.gold }} connectNulls={false} />
               <Line yAxisId="right" type="monotone" dataKey="avgBTXUnits" name="Avg BTX Units / Botox Appt" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
             </ComposedChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Multi-Line Chart — Revenue Efficiency Metrics */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Revenue Efficiency — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Avg Revenue Per Patient, Avg Revenue Per New Patient, and Revenue Per Net Scheduled Hour</p>
+          <ResponsiveContainer width="100%" height={340}>
+            <LineChart data={REVENUE_EFFICIENCY_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+              <Tooltip
+                formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]}
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
+              />
+              <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
+              <Line type="monotone" dataKey="avgRevPerPatient" name="Avg Revenue / Patient" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+              <Line type="monotone" dataKey="avgRevPerNewPatient" name="Avg Revenue / New Patient" stroke={T.gold} strokeWidth={3} dot={{ r: 5, fill: T.gold }} connectNulls={false} />
+              <Line type="monotone" dataKey="revPerNetSchedHr" name="Revenue / Net Scheduled Hour" stroke="#7dd3fc" strokeWidth={3} dot={{ r: 5, fill: '#7dd3fc' }} connectNulls={false} />
+            </LineChart>
           </ResponsiveContainer>
         </Card>
 
