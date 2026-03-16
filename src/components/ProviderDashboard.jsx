@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, Cell, Customized
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, Cell, Customized, ReferenceLine
 } from 'recharts';
 
 /* ─── Design Tokens ─── */
@@ -47,14 +47,63 @@ const RECENT_APPOINTMENTS = [
   { date: 'Mar 10', patient: 'Ella Thomas', service: 'Sculptra — Face', revenue: 2100 },
 ];
 
-const MONTHLY_REVENUE = [
-  { month: 'Oct', revenue: 62000, goal: 65000 },
-  { month: 'Nov', revenue: 58000, goal: 65000 },
-  { month: 'Dec', revenue: 71000, goal: 65000 },
-  { month: 'Jan', revenue: 54000, goal: 68000 },
-  { month: 'Feb', revenue: 66000, goal: 68000 },
-  { month: 'Mar', revenue: 38000, goal: 68000 },
+/* ─── Equity Tier Thresholds (annual) ─── */
+const TIERS = {
+  gold:     { label: 'Gold',     annual: 700000,  equity: 10000, color: '#C9A96E' },
+  platinum: { label: 'Platinum', annual: 900000,  equity: 20000, color: '#94a3b8' },
+  diamond:  { label: 'Diamond',  annual: 1000000, equity: 50000, color: '#7dd3fc', coe: true },
+};
+const TIER_MONTHLY = {
+  gold:     TIERS.gold.annual / 12,
+  platinum: TIERS.platinum.annual / 12,
+  diamond:  TIERS.diamond.annual / 12,
+};
+
+/* ─── Monthly Service Sales (YTD 2026 — Jan through current month) ─── */
+const MONTHLY_SALES = [
+  { month: 'Jan', sales: 62000 },
+  { month: 'Feb', sales: 71000 },
+  { month: 'Mar', sales: 48000 },
+  { month: 'Apr', sales: null },
+  { month: 'May', sales: null },
+  { month: 'Jun', sales: null },
+  { month: 'Jul', sales: null },
+  { month: 'Aug', sales: null },
+  { month: 'Sep', sales: null },
+  { month: 'Oct', sales: null },
+  { month: 'Nov', sales: null },
+  { month: 'Dec', sales: null },
 ];
+
+/* Clustered column chart data (Row 10–14 from template) */
+const CLUSTERED_DATA = MONTHLY_SALES.map(d => ({
+  month: d.month,
+  sales: d.sales,
+  gold: Math.round(TIER_MONTHLY.gold),
+  platinum: Math.round(TIER_MONTHLY.platinum),
+  diamond: Math.round(TIER_MONTHLY.diamond),
+}));
+
+/* Cumulative line chart data (Row 16–20 from template) */
+const CUMULATIVE_DATA = (() => {
+  let cumSales = 0, cumGold = 0, cumPlat = 0, cumDiam = 0;
+  return MONTHLY_SALES.map(d => {
+    cumGold += Math.round(TIER_MONTHLY.gold);
+    cumPlat += Math.round(TIER_MONTHLY.platinum);
+    cumDiam += Math.round(TIER_MONTHLY.diamond);
+    if (d.sales !== null) cumSales += d.sales;
+    return {
+      month: d.month,
+      sales: d.sales !== null ? cumSales : null,
+      gold: cumGold,
+      platinum: cumPlat,
+      diamond: cumDiam,
+    };
+  });
+})();
+
+const YTD_SALES = MONTHLY_SALES.reduce((s, d) => s + (d.sales || 0), 0);
+const MONTHS_ELAPSED = MONTHLY_SALES.filter(d => d.sales !== null).length;
 
 const SERVICE_BREAKDOWN = [
   { category: 'Injectables (Botox/Dysport)', revenue: 18200, pct: 47.9, appts: 34 },
@@ -364,43 +413,119 @@ const OverviewView = ({ onNavigate }) => {
   );
 };
 
-/* ─── Performance View ─── */
-const PerformanceView = ({ onNavigate }) => {
-  const mtdRev = 38200;
-  const mtdGoal = 68000;
-  const goalPct = Math.round((mtdRev / mtdGoal) * 100);
+/* ─── Tier Status Progress Component ─── */
+const TierProgressCard = () => {
+  const pctGold = Math.min(100, Math.round((YTD_SALES / TIERS.gold.annual) * 100));
+  const pctPlat = Math.min(100, Math.round((YTD_SALES / TIERS.platinum.annual) * 100));
+  const pctDiam = Math.min(100, Math.round((YTD_SALES / TIERS.diamond.annual) * 100));
 
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const daysElapsed = now.getDate() - 1;
-  const chartData = MONTHLY_REVENUE.map(d => {
-    if (d.month !== 'Mar' || daysElapsed <= 0) return d;
-    return { ...d, goal: Math.round(d.goal / daysInMonth * daysElapsed) };
-  });
+  const tierData = [
+    { ...TIERS.gold, pct: pctGold, remaining: Math.max(0, TIERS.gold.annual - YTD_SALES) },
+    { ...TIERS.platinum, pct: pctPlat, remaining: Math.max(0, TIERS.platinum.annual - YTD_SALES) },
+    { ...TIERS.diamond, pct: pctDiam, remaining: Math.max(0, TIERS.diamond.annual - YTD_SALES) },
+  ];
 
-  const PctLabels = (props) => {
-    const { xAxisMap, yAxisMap } = props;
-    if (!xAxisMap || !yAxisMap) return null;
-    const xAxis = xAxisMap[0];
-    const yAxis = yAxisMap[0];
-    if (!xAxis || !yAxis || !xAxis.scale || !yAxis.scale) return null;
-    return (
-      <g>
-        {chartData.map((d, i) => {
-          if (!d.goal || !d.revenue) return null;
-          const pct = Math.round((d.revenue / d.goal) * 100);
-          const color = pct >= 100 ? '#166534' : '#ef4444';
-          const cx = xAxis.scale(d.month) + xAxis.scale.bandwidth() / 2;
-          const topY = yAxis.scale(Math.max(d.revenue, d.goal)) - 5;
+  // Determine current achieved tier
+  const achievedTier = YTD_SALES >= TIERS.diamond.annual ? 'diamond'
+    : YTD_SALES >= TIERS.platinum.annual ? 'platinum'
+    : YTD_SALES >= TIERS.gold.annual ? 'gold' : null;
+
+  // Determine next target tier
+  const nextTier = !achievedTier ? tierData[0]
+    : achievedTier === 'gold' ? tierData[1]
+    : achievedTier === 'platinum' ? tierData[2] : null;
+
+  // Projected annual based on current run rate
+  const projectedAnnual = MONTHS_ELAPSED > 0 ? Math.round((YTD_SALES / MONTHS_ELAPSED) * 12) : 0;
+  const projectedTier = projectedAnnual >= TIERS.diamond.annual ? 'Diamond'
+    : projectedAnnual >= TIERS.platinum.annual ? 'Platinum'
+    : projectedAnnual >= TIERS.gold.annual ? 'Gold' : 'Below Gold';
+
+  return (
+    <Card style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, margin: 0 }}>2026 Equity Tier Progress</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Projected Status:</span>
+          <span style={{
+            padding: '4px 12px', borderRadius: 6, fontSize: 12, fontWeight: 800,
+            background: projectedTier === 'Diamond' ? 'linear-gradient(135deg, #7dd3fc, #bae6fd)' : projectedTier === 'Platinum' ? 'linear-gradient(135deg, #94a3b8, #cbd5e1)' : projectedTier === 'Gold' ? 'linear-gradient(135deg, #C9A96E, #e2c992)' : '#f3f4f6',
+            color: projectedTier === 'Below Gold' ? T.muted : T.navy,
+          }}>
+            {projectedTier}
+          </span>
+        </div>
+      </div>
+
+      {/* YTD Summary Row */}
+      <div style={{ background: T.navy, borderRadius: 10, padding: '16px 24px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: T.slate, marginBottom: 4 }}>YTD Service Sales</div>
+          <div style={{ fontSize: 28, fontWeight: 400, fontFamily: T.serif, color: T.gold }}>{fmtDollar(YTD_SALES)}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: T.slate, marginBottom: 4 }}>Projected Annual</div>
+          <div style={{ fontSize: 28, fontWeight: 400, fontFamily: T.serif, color: T.white }}>{fmtDollar(projectedAnnual)}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: T.slate, marginBottom: 4 }}>Months Elapsed</div>
+          <div style={{ fontSize: 28, fontWeight: 400, fontFamily: T.serif, color: T.white }}>{MONTHS_ELAPSED} of 12</div>
+        </div>
+      </div>
+
+      {/* Tier Progress Bars */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {tierData.map((tier, i) => {
+          const reached = YTD_SALES >= tier.annual;
           return (
-            <text key={i} x={cx} y={topY} textAnchor="middle" fontSize={13} fontWeight="bold" fill={color}>
-              {pct}%
-            </text>
+            <div key={i}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{
+                    display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
+                    background: reached ? '#4ade80' : tier.color,
+                    boxShadow: reached ? '0 0 8px rgba(74,222,128,0.5)' : 'none',
+                  }} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: T.navy }}>{tier.label}</span>
+                  <span style={{ fontSize: 12, color: T.muted }}>— {fmtDollar(tier.annual)} annual</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {tier.coe && (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: reached ? '#dcfce7' : '#f3f4f6', color: reached ? '#166534' : T.muted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {reached ? '★ Circle of Excellence' : 'Circle of Excellence'}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 12, fontWeight: 700, color: reached ? '#166534' : T.muted }}>
+                    {reached ? `✓ ${fmtDollar(tier.equity)} equity earned` : `${fmtDollar(tier.remaining)} remaining`}
+                  </span>
+                </div>
+              </div>
+              <div style={{ height: 8, background: '#f3f4f6', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4, transition: 'width 0.8s ease',
+                  width: `${tier.pct}%`,
+                  background: reached ? '#4ade80' : `linear-gradient(90deg, ${tier.color}, ${tier.color}88)`,
+                }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+                <span style={{ fontSize: 10, color: T.muted }}>{tier.pct}% complete</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: tier.color }}>
+                  Equity: {fmtDollar(tier.equity)}
+                </span>
+              </div>
+            </div>
           );
         })}
-      </g>
-    );
-  };
+      </div>
+    </Card>
+  );
+};
+
+/* ─── Performance View ─── */
+const PerformanceView = ({ onNavigate }) => {
+  const mtdSales = MONTHLY_SALES.find(d => d.month === 'Mar')?.sales || 0;
+  const avgPerMonth = MONTHS_ELAPSED > 0 ? Math.round(YTD_SALES / MONTHS_ELAPSED) : 0;
+  const pctToGold = Math.round((YTD_SALES / TIERS.gold.annual) * 100);
 
   return (
     <div style={{ minHeight: '100vh', background: T.bg, fontFamily: T.sans }}>
@@ -408,34 +533,71 @@ const PerformanceView = ({ onNavigate }) => {
       <PageHeader
         eyebrow={`PERFORMANCE · ${PROVIDER.name.toUpperCase()}`}
         title="Performance Metrics"
-        subtitle={`${PROVIDER.location} — March 2026`}
+        subtitle={`${PROVIDER.location} — 2026 YTD`}
       />
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 40px 60px' }}>
+        {/* KPI Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
-          <KPICard label="MTD Revenue" value={fmtDollar(mtdRev)} sub="Mar 1–16" status="warn" />
-          <KPICard label="MTD Goal" value={fmtDollar(mtdGoal)} sub="Full month target" />
-          <KPICard label="Goal %" value={`${goalPct}%`} sub={goalPct >= 100 ? 'On track' : `${100 - goalPct}% remaining`} status={goalPct >= 80 ? 'good' : 'warn'} />
-          <KPICard label="Avg / Appointment" value="$485" sub="62 appointments MTD" status="good" />
+          <KPICard label="YTD Service Sales" value={fmtDollar(YTD_SALES)} sub={`Jan–Mar 2026 (${MONTHS_ELAPSED} months)`} status="good" />
+          <KPICard label="Monthly Average" value={fmtDollar(avgPerMonth)} sub="Avg service sales / month" />
+          <KPICard label="Gold Tier Progress" value={`${pctToGold}%`} sub={`${fmtDollar(Math.max(0, TIERS.gold.annual - YTD_SALES))} remaining`} status={pctToGold >= 75 ? 'good' : pctToGold >= 50 ? 'warn' : 'bad'} />
+          <KPICard label="MTD (March)" value={fmtDollar(mtdSales)} sub="Current month in progress" status={mtdSales >= TIER_MONTHLY.gold ? 'good' : 'warn'} />
         </div>
 
+        {/* Tier Progress */}
+        <TierProgressCard />
+
+        {/* Clustered Column Chart — Monthly Sales vs Tier Budgets */}
         <Card style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Revenue vs Goal — Monthly</div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData} margin={{ top: 28, right: 8, left: 0, bottom: 0 }} barCategoryGap="3%" barGap={2}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Service Sales vs Tier Budgets — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Monthly service sales compared to the monthly budget needed to achieve each equity tier</p>
+          <ResponsiveContainer width="100%" height={340}>
+            <BarChart data={CLUSTERED_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }} barCategoryGap="12%" barGap={2}>
               <CartesianGrid vertical={false} stroke={T.divider} />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={fmtK} />
-              <Tooltip formatter={(v) => '$' + Math.round(v).toLocaleString()} />
-              <Legend verticalAlign="top" align="right" iconType="square" wrapperStyle={{ fontSize: 11, paddingBottom: 4 }} />
-              <Bar dataKey="revenue" name="Revenue" fill={T.gold} radius={[3, 3, 0, 0]} maxBarSize={78} />
-              <Bar dataKey="goal" name="Goal (Run-Rated)" fill={T.navy} radius={[3, 3, 0, 0]} maxBarSize={78} />
-              <Customized component={PctLabels} />
+              <Tooltip
+                formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]}
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
+              />
+              <Legend verticalAlign="top" align="right" iconType="square" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
+              <Bar dataKey="sales" name="Service Sales" radius={[3, 3, 0, 0]} maxBarSize={52}>
+                {CLUSTERED_DATA.map((d, i) => (
+                  <Cell key={i} fill={d.sales !== null ? T.gold : '#e5e7eb'} />
+                ))}
+              </Bar>
+              <Bar dataKey="gold" name="Gold Budget" fill="#C9A96E55" radius={[3, 3, 0, 0]} maxBarSize={52} />
+              <Bar dataKey="platinum" name="Platinum Budget" fill="#94a3b855" radius={[3, 3, 0, 0]} maxBarSize={52} />
+              <Bar dataKey="diamond" name="Diamond Budget" fill="#7dd3fc55" radius={[3, 3, 0, 0]} maxBarSize={52} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
 
+        {/* Cumulative Line Chart — YTD Sales vs Tier Run Rates */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Cumulative Sales vs Tier Targets — YTD</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Aggregate 2026 service sales progression vs cumulative budget needed for each tier</p>
+          <ResponsiveContainer width="100%" height={340}>
+            <LineChart data={CUMULATIVE_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={fmtK} />
+              <Tooltip
+                formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]}
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }}
+              />
+              <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
+              <Line type="monotone" dataKey="sales" name="YTD Service Sales" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+              <Line type="monotone" dataKey="gold" name="Gold Tier" stroke={TIERS.gold.color} strokeWidth={2} strokeDasharray="6 3" dot={false} />
+              <Line type="monotone" dataKey="platinum" name="Platinum Tier" stroke={TIERS.platinum.color} strokeWidth={2} strokeDasharray="6 3" dot={false} />
+              <Line type="monotone" dataKey="diamond" name="Diamond Tier" stroke={TIERS.diamond.color} strokeWidth={2} strokeDasharray="6 3" dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Service Breakdown Table */}
         <Card>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 14 }}>Revenue by Service Category — MTD</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 14 }}>Revenue by Service Category — YTD</h3>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <TableHeader columns={[
