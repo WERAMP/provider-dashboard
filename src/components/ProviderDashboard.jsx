@@ -260,6 +260,47 @@ const BENCH_EFF_AVG_DATA = MONTHS.map((m, i) => ({
   peerAvgRevHr: peerAvg(BENCH_REV_PER_HR, m) !== null ? Math.round(peerAvg(BENCH_REV_PER_HR, m)) : null,
 }));
 
+/* Combined datasets for Variant 4 (individual peers + peer average in one array) */
+const BENCH_SYRINGES_FULL = MONTHS.map((m, i) => {
+  const row = { month: m, current: INJECTABLES_DATA[i]?.avgSyringes ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.syringes[i]; });
+  const vals = BENCHMARK_PROVIDERS.map(p => p.syringes[i]).filter(v => v !== null && v !== undefined);
+  row.peerAvg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 : null;
+  return row;
+});
+
+const BENCH_BTX_FULL = MONTHS.map((m, i) => {
+  const row = { month: m, current: INJECTABLES_DATA[i]?.avgBTXUnits ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.btxUnits[i]; });
+  const vals = BENCHMARK_PROVIDERS.map(p => p.btxUnits[i]).filter(v => v !== null && v !== undefined);
+  row.peerAvg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  return row;
+});
+
+const BENCH_REV_PATIENT_FULL = MONTHS.map((m, i) => {
+  const row = { month: m, current: REVENUE_EFFICIENCY_DATA[i]?.avgRevPerPatient ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.revPerPatient[i]; });
+  const vals = BENCHMARK_PROVIDERS.map(p => p.revPerPatient[i]).filter(v => v !== null && v !== undefined);
+  row.peerAvg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  return row;
+});
+
+const BENCH_REV_NEW_FULL = MONTHS.map((m, i) => {
+  const row = { month: m, current: REVENUE_EFFICIENCY_DATA[i]?.avgRevPerNewPatient ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.revPerNewPatient[i]; });
+  const vals = BENCHMARK_PROVIDERS.map(p => p.revPerNewPatient[i]).filter(v => v !== null && v !== undefined);
+  row.peerAvg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  return row;
+});
+
+const BENCH_REV_HR_FULL = MONTHS.map((m, i) => {
+  const row = { month: m, current: REVENUE_EFFICIENCY_DATA[i]?.revPerNetSchedHr ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.revPerSchedHr[i]; });
+  const vals = BENCHMARK_PROVIDERS.map(p => p.revPerSchedHr[i]).filter(v => v !== null && v !== undefined);
+  row.peerAvg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  return row;
+});
+
 /* Filter helper: only months with actual data (Jan–Mar for 2026) */
 const ytd = (arr) => arr.filter(d => YTD_MONTHS.includes(d.month));
 
@@ -792,6 +833,108 @@ const BenchmarkToggleChart = ({ title, subtitle, datasets, type }) => {
   );
 };
 
+/* ─── Benchmark V4 Chart (Split + Peer Avg + Individual Peers, All Toggleable) ─── */
+const BenchmarkV4Chart = ({ title, subtitle, datasets, type }) => {
+  const [visible, setVisible] = useState(() => {
+    const init = { current: true, peerAvg: true };
+    BENCHMARK_PROVIDERS.forEach(p => { init[p.name] = true; });
+    return init;
+  });
+  const toggle = (key) => setVisible(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const allKeys = ['current', 'peerAvg', ...BENCHMARK_PROVIDERS.map(p => p.name)];
+  const colorMap = { current: T.navy, peerAvg: '#9333ea' };
+  BENCHMARK_PROVIDERS.forEach(p => { colorMap[p.name] = p.color; });
+  const labelMap = { current: PROVIDER.name + ' (You)', peerAvg: 'Peer Average' };
+  BENCHMARK_PROVIDERS.forEach(p => { labelMap[p.name] = p.short; });
+
+  const renderLegend = () => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+      {allKeys.map(key => (
+        <button key={key} onClick={() => toggle(key)} style={{
+          display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 6,
+          border: `1px solid ${visible[key] ? colorMap[key] : T.border}`,
+          background: visible[key] ? colorMap[key] + '15' : '#f9fafb',
+          cursor: 'pointer', fontSize: 11, fontWeight: 600,
+          color: visible[key] ? colorMap[key] : T.muted,
+          opacity: visible[key] ? 1 : 0.5, transition: 'all 0.15s',
+        }}>
+          <span style={{
+            width: key === 'peerAvg' ? 16 : 8, height: key === 'peerAvg' ? 0 : 8,
+            borderRadius: key === 'peerAvg' ? 0 : '50%',
+            background: key === 'peerAvg' ? 'none' : colorMap[key],
+            borderTop: key === 'peerAvg' ? `2px dashed ${colorMap[key]}` : 'none',
+            opacity: visible[key] ? 1 : 0.3,
+          }} />
+          {labelMap[key]}
+        </button>
+      ))}
+    </div>
+  );
+
+  const renderChart = ({ data, chartTitle, yDomain, formatter, tickFmt }) => (
+    <div>
+      <h4 style={{ fontSize: 12, fontWeight: 700, color: T.navy, marginBottom: 8 }}>{chartTitle}</h4>
+      <ResponsiveContainer width="100%" height={280}>
+        <LineChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+          <CartesianGrid vertical={false} stroke={T.divider} />
+          <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+          <YAxis domain={yDomain} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={tickFmt} />
+          <Tooltip formatter={formatter} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+          {visible.current && <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />}
+          {visible.peerAvg && <Line type="monotone" dataKey="peerAvg" name="Peer Avg" stroke="#9333ea" strokeWidth={2.5} strokeDasharray="6 3" dot={{ r: 3, fill: '#9333ea', strokeWidth: 0 }} connectNulls={false} />}
+          {BENCHMARK_PROVIDERS.map(p => visible[p.name] && (
+            <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+
+  if (type === 'injectables') {
+    return (
+      <Card style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>{title}</h3>
+        <p style={{ fontSize: 12, color: T.muted, margin: '0 0 12px' }}>{subtitle}</p>
+        {renderLegend()}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {renderChart({
+            data: datasets.syringes,
+            chartTitle: 'Avg Syringes / Injectables Appt',
+            yDomain: [0, 4],
+            formatter: (v) => [v !== null ? v.toFixed(1) : '—'],
+            tickFmt: (v) => v,
+          })}
+          {renderChart({
+            data: datasets.btx,
+            chartTitle: 'Avg BTX Units / Botox Appt',
+            yDomain: [0, 60],
+            formatter: (v) => [v !== null ? Math.round(v) + ' units' : '—'],
+            tickFmt: (v) => v,
+          })}
+        </div>
+      </Card>
+    );
+  }
+
+  // type === 'efficiency'
+  const charts = [
+    { data: datasets.revPatient, chartTitle: 'Avg Revenue / Patient', formatter: (v) => [v !== null ? '$' + Math.round(v) : '—'], tickFmt: (v) => `$${v}` },
+    { data: datasets.revNew, chartTitle: 'Avg Revenue / New Patient', formatter: (v) => [v !== null ? '$' + Math.round(v) : '—'], tickFmt: (v) => `$${v}` },
+    { data: datasets.revHr, chartTitle: 'Revenue / Net Sched Hr', formatter: (v) => [v !== null ? '$' + Math.round(v) : '—'], tickFmt: (v) => `$${v}` },
+  ];
+  return (
+    <Card style={{ marginBottom: 24 }}>
+      <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>{title}</h3>
+      <p style={{ fontSize: 12, color: T.muted, margin: '0 0 12px' }}>{subtitle}</p>
+      {renderLegend()}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        {charts.map(ch => renderChart({ ...ch, yDomain: ['auto', 'auto'], key: ch.chartTitle }))}
+      </div>
+    </Card>
+  );
+};
+
 /* ─── Performance View ─── */
 const PerformanceView = ({ onNavigate }) => {
   const mtdSales = MONTHLY_SALES.find(d => d.month === 'Mar')?.sales || 0;
@@ -1090,6 +1233,14 @@ const PerformanceView = ({ onNavigate }) => {
             type="injectables"
           />
 
+          {/* ── INJECTABLES EFFICIENCY — VARIANT 4: Split + Peer Avg + Individual + Toggle ── */}
+          <BenchmarkV4Chart
+            title="Injectables Efficiency — Variant 4: Full Comparison"
+            subtitle="Split charts with peer average, individual peers, and toggles"
+            datasets={{ syringes: ytd(BENCH_SYRINGES_FULL), btx: ytd(BENCH_BTX_FULL) }}
+            type="injectables"
+          />
+
           {/* ── REVENUE EFFICIENCY — VARIANT 1: Mini Charts (Split by Metric) ── */}
           <div style={{ marginBottom: 24 }}>
             <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12 }}>Revenue Efficiency — Variant 1: Split Charts</h3>
@@ -1144,6 +1295,14 @@ const PerformanceView = ({ onNavigate }) => {
             title="Revenue Efficiency — Variant 3: Toggle"
             subtitle="Click provider names to show/hide"
             datasets={{ revPatient: ytd(BENCH_REV_PER_PATIENT), revNew: ytd(BENCH_REV_PER_NEW), revHr: ytd(BENCH_REV_PER_HR) }}
+            type="efficiency"
+          />
+
+          {/* ── REVENUE EFFICIENCY — VARIANT 4: Split + Peer Avg + Individual + Toggle ── */}
+          <BenchmarkV4Chart
+            title="Revenue Efficiency — Variant 4: Full Comparison"
+            subtitle="Split charts with peer average, individual peers, and toggles"
+            datasets={{ revPatient: ytd(BENCH_REV_PATIENT_FULL), revNew: ytd(BENCH_REV_NEW_FULL), revHr: ytd(BENCH_REV_HR_FULL) }}
             type="efficiency"
           />
         </div>
