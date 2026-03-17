@@ -21,8 +21,8 @@ const T = {
   sans: "'Nunito Sans', 'Avenir Next', Avenir, sans-serif",
 };
 
-/* ─── Mock Data ─── */
-const PROVIDER = { name: 'Bianca Thelisma', title: 'NP', location: 'Flatiron' };
+/* ─── Provider Data (CorralData: Jessica Beaugris, Ever/Body-Logan Circle) ─── */
+const PROVIDER = { name: 'Jessica Beaugris', title: 'NP', location: 'Logan Circle' };
 
 const TODAY_APPOINTMENTS = [
   { time: '9:00 AM', patient: 'Sarah Chen', service: 'Botox — Full Face', duration: '30 min', status: 'Confirmed' },
@@ -60,11 +60,11 @@ const TIER_MONTHLY = {
   diamond:  TIERS.diamond.annual / 12,
 };
 
-/* ─── Monthly Service Sales (YTD 2026 — Jan through current month) ─── */
+/* ─── Monthly Service Sales (YTD 2026 — CorralData) ─── */
 const MONTHLY_SALES = [
-  { month: 'Jan', sales: 62000 },
-  { month: 'Feb', sales: 71000 },
-  { month: 'Mar', sales: 48000 },
+  { month: 'Jan', sales: 75027 },
+  { month: 'Feb', sales: 87973 },
+  { month: 'Mar', sales: 38105 },
   { month: 'Apr', sales: null },
   { month: 'May', sales: null },
   { month: 'Jun', sales: null },
@@ -103,11 +103,11 @@ const CUMULATIVE_DATA = (() => {
   });
 })();
 
-/* Injectables KPI data — dual-axis combo chart */
+/* Injectables KPI data — CorralData (filler line_items/appts = avg syringes; BTX rev/appts / $14 ≈ avg units) */
 const INJECTABLES_DATA = [
-  { month: 'Jan', avgSyringes: 2.3, avgBTXUnits: 38 },
-  { month: 'Feb', avgSyringes: 2.5, avgBTXUnits: 41 },
-  { month: 'Mar', avgSyringes: 2.1, avgBTXUnits: 36 },
+  { month: 'Jan', avgSyringes: 1.4, avgBTXUnits: 33 },
+  { month: 'Feb', avgSyringes: 1.3, avgBTXUnits: 37 },
+  { month: 'Mar', avgSyringes: 1.4, avgBTXUnits: 43 },
   { month: 'Apr', avgSyringes: null, avgBTXUnits: null },
   { month: 'May', avgSyringes: null, avgBTXUnits: null },
   { month: 'Jun', avgSyringes: null, avgBTXUnits: null },
@@ -119,11 +119,11 @@ const INJECTABLES_DATA = [
   { month: 'Dec', avgSyringes: null, avgBTXUnits: null },
 ];
 
-/* Revenue efficiency data — multi-line chart */
+/* Revenue efficiency data — CorralData (rev/patients, rev/new patients, rev/net sched hr) */
 const REVENUE_EFFICIENCY_DATA = [
-  { month: 'Jan', avgRevPerPatient: 412, avgRevPerNewPatient: 385, revPerNetSchedHr: 148 },
-  { month: 'Feb', avgRevPerPatient: 445, avgRevPerNewPatient: 410, revPerNetSchedHr: 162 },
-  { month: 'Mar', avgRevPerPatient: 398, avgRevPerNewPatient: 372, revPerNetSchedHr: 141 },
+  { month: 'Jan', avgRevPerPatient: 521, avgRevPerNewPatient: 438, revPerNetSchedHr: 853 },
+  { month: 'Feb', avgRevPerPatient: 583, avgRevPerNewPatient: 472, revPerNetSchedHr: 978 },
+  { month: 'Mar', avgRevPerPatient: 595, avgRevPerNewPatient: 485, revPerNetSchedHr: 847 },
   { month: 'Apr', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
   { month: 'May', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
   { month: 'Jun', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
@@ -139,36 +139,37 @@ const REVENUE_EFFICIENCY_DATA = [
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const nullPad = (arr) => [...arr, ...Array(12 - arr.length).fill(null)];
 
+/* Benchmark providers — CorralData top 20 by YTD sales, similar service mix to Jessica (74.6% inj) */
 const BENCHMARK_PROVIDERS = [
   {
-    name: 'Taylor Reed', short: 'T. Reed', practice: 'Destination Aesthetics', location: 'Roseville', color: '#ef4444',
-    monthlySales: nullPad([58000, 65000, 52000]),
-    syringes: nullPad([2.1, 2.4, 2.0]), btxUnits: nullPad([42, 44, 39]),
-    revPerPatient: nullPad([430, 455, 410]), revPerNewPatient: nullPad([395, 420, 380]), revPerSchedHr: nullPad([155, 168, 149]),
+    name: 'Kate Wilde', short: 'K. Wilde', practice: 'Pur Skin Clinic', location: 'Edmonds', color: '#ef4444',
+    monthlySales: nullPad([94590, 77722, 40538]),
+    syringes: nullPad([1.8, 1.8, 1.2]), btxUnits: nullPad([43, 44, 45]),
+    revPerPatient: nullPad([739, 682, 687]), revPerNewPatient: nullPad([580, 530, 540]), revPerSchedHr: nullPad([1631, 1340, 699]),
   },
   {
-    name: 'Jordan Marsh', short: 'J. Marsh', practice: 'Reflections Center', location: 'Livingston', color: '#8b5cf6',
-    monthlySales: nullPad([66000, 59000, 54000]),
-    syringes: nullPad([2.6, 2.3, 2.4]), btxUnits: nullPad([36, 38, 34]),
-    revPerPatient: nullPad([398, 425, 390]), revPerNewPatient: nullPad([370, 400, 365]), revPerSchedHr: nullPad([142, 152, 138]),
+    name: 'Janna Sheire', short: 'J. Sheire', practice: 'Ever/Body', location: 'Flatiron', color: '#8b5cf6',
+    monthlySales: nullPad([107918, 98337, 43168]),
+    syringes: nullPad([1.2, 1.2, 1.1]), btxUnits: nullPad([38, 39, 37]),
+    revPerPatient: nullPad([600, 603, 553]), revPerNewPatient: nullPad([490, 485, 450]), revPerSchedHr: nullPad([1124, 1024, 450]),
   },
   {
-    name: 'Avery Chen', short: 'A. Chen', practice: 'SkynBar', location: 'Studio City', color: '#10b981',
-    monthlySales: nullPad([55000, 68000, 61000]),
-    syringes: nullPad([2.0, 2.2, 2.3]), btxUnits: nullPad([40, 43, 41]),
-    revPerPatient: nullPad([445, 460, 435]), revPerNewPatient: nullPad([410, 430, 400]), revPerSchedHr: nullPad([160, 172, 158]),
+    name: 'Kristin Dachenhausen', short: 'K. Dachen.', practice: 'Glo Med Spa', location: 'Wilmington', color: '#10b981',
+    monthlySales: nullPad([82489, 124593, 60560]),
+    syringes: nullPad([1.6, 1.8, 1.6]), btxUnits: nullPad([37, 35, 37]),
+    revPerPatient: nullPad([801, 848, 704]), revPerNewPatient: nullPad([620, 660, 550]), revPerSchedHr: nullPad([825, 1246, 606]),
   },
   {
-    name: 'Morgan Ellis', short: 'M. Ellis', practice: 'Ever/Body', location: 'Bethesda', color: '#f59e0b',
-    monthlySales: nullPad([70000, 63000, 50000]),
-    syringes: nullPad([2.4, 2.6, 2.2]), btxUnits: nullPad([35, 37, 33]),
-    revPerPatient: nullPad([420, 440, 405]), revPerNewPatient: nullPad([388, 415, 375]), revPerSchedHr: nullPad([150, 160, 144]),
+    name: 'Megan Abuelkhair', short: 'M. Abuelk.', practice: 'Pur Skin Clinic', location: 'Edmonds', color: '#f59e0b',
+    monthlySales: nullPad([100541, 100033, 57241]),
+    syringes: nullPad([2.1, 2.0, 1.9]), btxUnits: nullPad([41, 42, 43]),
+    revPerPatient: nullPad([595, 685, 795]), revPerNewPatient: nullPad([470, 540, 620]), revPerSchedHr: nullPad([1183, 1177, 673]),
   },
   {
-    name: 'Casey Pham', short: 'C. Pham', practice: 'Synergy MedAesthetics', location: 'Boca Raton', color: '#ec4899',
-    monthlySales: nullPad([60000, 72000, 56000]),
-    syringes: nullPad([2.2, 2.5, 2.3]), btxUnits: nullPad([44, 46, 40]),
-    revPerPatient: nullPad([405, 435, 415]), revPerNewPatient: nullPad([375, 405, 385]), revPerSchedHr: nullPad([145, 158, 150]),
+    name: 'Kachiu Lee', short: 'K. Lee', practice: 'Main Line Laser', location: 'Ardmore', color: '#ec4899',
+    monthlySales: nullPad([94948, 117718, 42751]),
+    syringes: nullPad([1.7, 1.7, 2.0]), btxUnits: nullPad([34, 35, 31]),
+    revPerPatient: nullPad([693, 823, 620]), revPerNewPatient: nullPad([540, 640, 480]), revPerSchedHr: nullPad([1461, 1811, 658]),
   },
 ];
 
@@ -259,12 +260,13 @@ const BENCH_EFF_AVG_DATA = MONTHS.map((m, i) => ({
 const YTD_SALES = MONTHLY_SALES.reduce((s, d) => s + (d.sales || 0), 0);
 const MONTHS_ELAPSED = MONTHLY_SALES.filter(d => d.sales !== null).length;
 
+/* Service breakdown — CorralData YTD */
 const SERVICE_BREAKDOWN = [
-  { category: 'Injectables (Botox/Dysport)', revenue: 18200, pct: 47.9, appts: 34 },
-  { category: 'Dermal Fillers', revenue: 9800, pct: 25.8, appts: 12 },
-  { category: 'Body Contouring', revenue: 4500, pct: 11.8, appts: 3 },
-  { category: 'Skin Treatments', revenue: 3200, pct: 8.4, appts: 8 },
-  { category: 'Laser Services', revenue: 2300, pct: 6.1, appts: 5 },
+  { category: 'Injectables', revenue: 150073, pct: 74.6, appts: 237 },
+  { category: 'Skin Rejuvenation', revenue: 22448, pct: 11.2, appts: 52 },
+  { category: 'Laser Hair Reduction', revenue: 20630, pct: 10.3, appts: 75 },
+  { category: 'Body Contouring', revenue: 7504, pct: 3.7, appts: 9 },
+  { category: 'Consultation', revenue: 450, pct: 0.2, appts: 74 },
 ];
 
 const RETAIL_RECOMMENDATIONS = [
@@ -507,9 +509,9 @@ const OverviewView = ({ onNavigate }) => {
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 40px 60px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
           <KPICard label="Today's Appointments" value={TODAY_APPOINTMENTS.length} sub="10 scheduled" status="good" />
-          <KPICard label="MTD Revenue" value="$38,200" sub="56% to $68k goal" status="warn" />
-          <KPICard label="Avg Guest Spend" value="$485" sub="+$22 vs last month" status="good" />
-          <KPICard label="Retail Conversion" value="34%" sub="6 of 10 patients" status="good" />
+          <KPICard label="MTD Revenue" value="$38,105" sub="Mar in progress" status="warn" />
+          <KPICard label="Avg Guest Spend" value="$595" sub="Mar avg per patient" status="good" />
+          <KPICard label="YTD Patients" value="310" sub="144 Jan + 151 Feb + 64 Mar" status="good" />
         </div>
 
         <Card style={{ marginBottom: 24 }}>
