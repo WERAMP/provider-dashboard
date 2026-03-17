@@ -516,6 +516,7 @@ const confidenceColor = (c) => {
 const PROVIDER_NAV_ITEMS = [
   { view: 'overview', label: 'Overview' },
   { view: 'performance', label: 'Performance' },
+  { view: 'performance_updated', label: 'Performance_Updated' },
   { view: 'schedule', label: 'My Schedule' },
   { view: 'retail', label: 'Retail' },
   { view: 'patients', label: 'My Patients' },
@@ -1711,6 +1712,321 @@ const PerformanceView = ({ onNavigate }) => {
   );
 };
 
+/* ─── Performance Updated View (V4 Only) ─── */
+const PerformanceUpdatedView = ({ onNavigate }) => {
+  const mtdSales = MONTHLY_SALES.find(d => d.month === 'Mar')?.sales || 0;
+  const avgPerMonth = MONTHS_ELAPSED > 0 ? Math.round(YTD_SALES / MONTHS_ELAPSED) : 0;
+  const pctToGold = Math.round((YTD_SALES / TIERS.gold.annual) * 100);
+
+  return (
+    <div style={{ minHeight: '100vh', background: T.bg, fontFamily: T.sans }}>
+      <GlobalNav onNavigate={onNavigate} activeView="performance_updated" />
+      <PageHeader
+        eyebrow={`PERFORMANCE · ${PROVIDER.name.toUpperCase()}`}
+        title="Performance Metrics"
+        subtitle={`${PROVIDER.location} — 2026 YTD`}
+      />
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 40px 60px' }}>
+        {/* KPI Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
+          <KPICard label="YTD Service Sales" value={fmtDollar(YTD_SALES)} sub={`Jan–Mar 2026 (${MONTHS_ELAPSED} months)`} status="good" />
+          <KPICard label="Monthly Average" value={fmtDollar(avgPerMonth)} sub="Avg service sales / month" />
+          <KPICard label="Gold Tier Progress" value={`${pctToGold}%`} sub={`${fmtDollar(Math.max(0, TIERS.gold.annual - YTD_SALES))} remaining`} status={pctToGold >= 75 ? 'good' : pctToGold >= 50 ? 'warn' : 'bad'} />
+          <KPICard label="MTD (March)" value={fmtDollar(mtdSales)} sub="Current month in progress" status={mtdSales >= TIER_MONTHLY.gold ? 'good' : 'warn'} />
+        </div>
+
+        {/* Tier Progress */}
+        <TierProgressCard />
+
+        {/* Clustered Column Chart — Monthly Sales vs Tier Budgets */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Service Sales vs Tier Budgets — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Monthly service sales compared to the monthly budget needed to achieve each equity tier</p>
+          <ResponsiveContainer width="100%" height={340}>
+            <BarChart data={CLUSTERED_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }} barCategoryGap="12%" barGap={2}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={fmtK} />
+              <Tooltip formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <Legend verticalAlign="top" align="right" iconType="square" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
+              <Bar dataKey="sales" name="Service Sales" radius={[3, 3, 0, 0]} maxBarSize={52}>
+                {CLUSTERED_DATA.map((d, i) => (<Cell key={i} fill={d.sales !== null ? T.gold : '#e5e7eb'} />))}
+              </Bar>
+              <Bar dataKey="gold" name="Gold Budget" fill="#C9A96E55" radius={[3, 3, 0, 0]} maxBarSize={52} />
+              <Bar dataKey="platinum" name="Platinum Budget" fill="#94a3b855" radius={[3, 3, 0, 0]} maxBarSize={52} />
+              <Bar dataKey="diamond" name="Diamond Budget" fill="#7dd3fc55" radius={[3, 3, 0, 0]} maxBarSize={52} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Cumulative Line Chart */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Cumulative Sales vs Tier Targets — YTD</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Aggregate 2026 service sales progression vs cumulative budget needed for each tier</p>
+          <ResponsiveContainer width="100%" height={340}>
+            <LineChart data={CUMULATIVE_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={fmtK} />
+              <Tooltip formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
+              <Line type="monotone" dataKey="sales" name="YTD Service Sales" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+              <Line type="monotone" dataKey="gold" name="Gold Tier" stroke={TIERS.gold.color} strokeWidth={2} strokeDasharray="6 3" dot={false} />
+              <Line type="monotone" dataKey="platinum" name="Platinum Tier" stroke={TIERS.platinum.color} strokeWidth={2} strokeDasharray="6 3" dot={false} />
+              <Line type="monotone" dataKey="diamond" name="Diamond Tier" stroke={TIERS.diamond.color} strokeWidth={2} strokeDasharray="6 3" dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Injectables Efficiency */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Injectables Efficiency — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Average syringes per injectables appointment vs average BTX units per Botox appointment</p>
+          <ResponsiveContainer width="100%" height={340}>
+            <ComposedChart data={ytd(INJECTABLES_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="left" orientation="left" domain={[0, 4]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} label={{ value: 'Avg Syringes', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 11, fill: T.muted, fontFamily: T.sans } }} />
+              <YAxis yAxisId="right" orientation="right" domain={[0, 60]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} label={{ value: 'Avg BTX Units', angle: 90, position: 'insideRight', offset: 10, style: { fontSize: 11, fill: T.muted, fontFamily: T.sans } }} />
+              <Tooltip formatter={(v, name) => { if (v === null) return ['—', name]; return name === 'Avg Syringes / Injectables Appt' ? [v.toFixed(1), name] : [Math.round(v) + ' units', name]; }} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
+              <Line yAxisId="left" type="monotone" dataKey="avgSyringes" name="Avg Syringes / Injectables Appt" stroke={T.gold} strokeWidth={3} dot={{ r: 5, fill: T.gold }} connectNulls={false} />
+              <Line yAxisId="right" type="monotone" dataKey="avgBTXUnits" name="Avg BTX Units / Botox Appt" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Revenue Efficiency */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Revenue Efficiency — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Avg Revenue Per Patient, Avg Revenue Per New Patient, and Revenue Per Net Scheduled Hour</p>
+          <ResponsiveContainer width="100%" height={340}>
+            <LineChart data={ytd(REVENUE_EFFICIENCY_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+              <Tooltip formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 11, paddingBottom: 8 }} />
+              <Line type="monotone" dataKey="avgRevPerPatient" name="Avg Revenue / Patient" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+              <Line type="monotone" dataKey="avgRevPerNewPatient" name="Avg Revenue / New Patient" stroke={T.gold} strokeWidth={3} dot={{ r: 5, fill: T.gold }} connectNulls={false} />
+              <Line type="monotone" dataKey="revPerNetSchedHr" name="Revenue / Net Scheduled Hour" stroke="#7dd3fc" strokeWidth={3} dot={{ r: 5, fill: '#7dd3fc' }} connectNulls={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Cancel/No-Show Rate */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Cancel + No-Show Rate — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Percentage of appointments cancelled or no-showed (Goal: &lt;5%)</p>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={ytd(CANCEL_NOSHOW_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 'auto']} />
+              <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <ReferenceLine y={5} stroke="#ef4444" strokeDasharray="4 3" strokeWidth={1} label={{ value: 'Goal 5%', position: 'right', fill: '#ef4444', fontSize: 10 }} />
+              <Line type="monotone" dataKey="rate" name="Cancel/No-Show Rate" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Product Sales % */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Product Sales as % of Total Revenue — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Retail product sales as a percentage of total sales (Goal: &gt;7.5%)</p>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={ytd(PRODUCT_SALES_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 'auto']} />
+              <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <ReferenceLine y={7.5} stroke="#10b981" strokeDasharray="4 3" strokeWidth={1} label={{ value: 'Goal 7.5%', position: 'right', fill: '#10b981', fontSize: 10 }} />
+              <Line type="monotone" dataKey="pct" name="Product Sales %" stroke={T.gold} strokeWidth={3} dot={{ r: 5, fill: T.gold }} connectNulls={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Rebooking Rate */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Rebooking Rate — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Percentage of patients who returned or booked a future appointment after their first visit that month</p>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={ytd(REBOOKING_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
+              <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <Line type="monotone" dataKey="rate" name="Rebooking Rate" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* New Patient Retention */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>New Patient Retention — % Returned within 150 Days</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Q4 2025 cohort: {RETENTION_150D.returned} of {RETENTION_150D.newPatients} new patients returned ({RETENTION_150D.rate}%)</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ flex: 1, height: 28, background: '#f3f4f6', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+              <div style={{ width: `${RETENTION_150D.rate}%`, height: '100%', background: T.navy, borderRadius: 8, transition: 'width 0.5s' }} />
+            </div>
+            <span style={{ fontSize: 20, fontWeight: 700, color: T.navy, minWidth: 60 }}>{RETENTION_150D.rate}%</span>
+          </div>
+        </Card>
+
+        {/* Service Breakdown Table */}
+        <Card>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 14 }}>Revenue by Service Category — YTD</h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <TableHeader columns={[
+                { label: 'Category' }, { label: 'Revenue', align: 'right' }, { label: '% of Total', align: 'right' }, { label: 'Appointments', align: 'right' },
+              ]} />
+              <tbody>
+                {SERVICE_BREAKDOWN.map((s, i) => (
+                  <tr key={i} style={{ borderBottom: `1px solid ${T.divider}` }}>
+                    <td style={{ padding: '12px 14px', fontSize: 13, color: T.body }}>{s.category}</td>
+                    <td style={{ padding: '12px 14px', fontSize: 13, fontWeight: 600, color: T.navy, textAlign: 'right' }}>{fmtDollar(s.revenue)}</td>
+                    <td style={{ padding: '12px 14px', fontSize: 13, color: T.muted, textAlign: 'right' }}>{s.pct}%</td>
+                    <td style={{ padding: '12px 14px', fontSize: 13, color: T.muted, textAlign: 'right' }}>{s.appts}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            PEER BENCHMARK — V4 ONLY
+            ═══════════════════════════════════════════════════════════════ */}
+        <div style={{ marginTop: 48, borderTop: `2px solid ${T.gold}`, paddingTop: 32 }}>
+          <h2 style={{ fontFamily: T.serif, fontSize: 28, fontWeight: 400, color: T.navy, margin: '0 0 6px' }}>Peer Benchmark</h2>
+          <p style={{ fontSize: 13, color: T.muted, margin: '0 0 20px' }}>Top providers with similar service mix and net scheduled hours — selected from top 20 by YTD service sales across AMP</p>
+
+          {/* Legend */}
+          <Card style={{ marginBottom: 24, padding: '16px 24px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 12, height: 3, background: T.navy, display: 'inline-block', borderRadius: 2 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.navy }}>{PROVIDER.name} (You)</span>
+              </div>
+              {BENCHMARK_PROVIDERS.map(p => (
+                <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 12, height: 3, background: p.color, display: 'inline-block', borderRadius: 2 }} />
+                  <span style={{ fontSize: 12, color: T.body }}>{p.short}</span>
+                  <span style={{ fontSize: 10, color: T.muted }}>— {p.practice}, {p.location}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Service Sales vs Peers — Monthly (bars + lines) */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Service Sales vs Peers — Monthly</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your monthly sales (bars) compared to 5 benchmark providers (lines)</p>
+            <ResponsiveContainer width="100%" height={380}>
+              <ComposedChart data={BENCH_SALES_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={fmtK} />
+                <Tooltip formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+                <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 10, paddingBottom: 8 }} />
+                <Bar dataKey="current" name={PROVIDER.name} radius={[3, 3, 0, 0]} maxBarSize={40}>
+                  {BENCH_SALES_DATA.map((d, i) => (<Cell key={i} fill={d.current !== null ? T.gold : '#e5e7eb'} />))}
+                </Bar>
+                {BENCHMARK_PROVIDERS.map(p => (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={2} dot={{ r: 3, fill: p.color }} connectNulls={false} />
+                ))}
+                <ReferenceLine y={Math.round(TIERS.gold.annual / 12)} stroke={TIERS.gold.color} strokeDasharray="4 3" strokeWidth={1} />
+                <ReferenceLine y={Math.round(TIERS.platinum.annual / 12)} stroke={TIERS.platinum.color} strokeDasharray="4 3" strokeWidth={1} />
+                <ReferenceLine y={Math.round(TIERS.diamond.annual / 12)} stroke={TIERS.diamond.color} strokeDasharray="4 3" strokeWidth={1} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* Cumulative Sales vs Peers — YTD */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Cumulative Sales vs Peers — YTD</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Aggregate 2026 service sales progression compared to peers and tier targets</p>
+            <ResponsiveContainer width="100%" height={380}>
+              <LineChart data={BENCH_CUMULATIVE_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={fmtK} />
+                <Tooltip formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+                <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 10, paddingBottom: 8 }} />
+                <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+                {BENCHMARK_PROVIDERS.map(p => (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={2} dot={{ r: 3, fill: p.color }} connectNulls={false} />
+                ))}
+                <Line type="monotone" dataKey="gold" name="Gold Tier" stroke={TIERS.gold.color} strokeWidth={1} strokeDasharray="6 3" dot={false} />
+                <Line type="monotone" dataKey="platinum" name="Platinum Tier" stroke={TIERS.platinum.color} strokeWidth={1} strokeDasharray="6 3" dot={false} />
+                <Line type="monotone" dataKey="diamond" name="Diamond Tier" stroke={TIERS.diamond.color} strokeWidth={1} strokeDasharray="6 3" dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* Injectables Efficiency — V4 */}
+          <BenchmarkV4Chart
+            title="Injectables Efficiency — Peer Comparison"
+            subtitle="Split charts with peer average, individual peers, and toggles"
+            datasets={{ syringes: ytd(BENCH_SYRINGES_FULL), btx: ytd(BENCH_BTX_FULL) }}
+            type="injectables"
+          />
+
+          {/* Revenue Efficiency — V4 */}
+          <BenchmarkV4Chart
+            title="Revenue Efficiency — Peer Comparison"
+            subtitle="Split charts with peer average, individual peers, and toggles"
+            datasets={{ revPatient: ytd(BENCH_REV_PATIENT_FULL), revNew: ytd(BENCH_REV_NEW_FULL), revHr: ytd(BENCH_REV_HR_FULL) }}
+            type="efficiency"
+          />
+
+          {/* Cancel/No-Show Rate — V4 */}
+          <BenchmarkV4Chart
+            title="Cancel/No-Show Rate — Peer Comparison"
+            subtitle="Split chart with peer average, individual peers, and toggles (Goal: <5%)"
+            datasets={{ data: ytd(BENCH_CANCEL_FULL), yDomain: [0, 'auto'], formatter: (v) => [v !== null ? v.toFixed(1) + '%' : '—'], tickFmt: (v) => `${v}%`, refLine: { y: 5, color: '#ef4444' } }}
+            type="singleMetric"
+          />
+
+          {/* Product Sales % — V4 */}
+          <BenchmarkV4Chart
+            title="Product Sales % — Peer Comparison"
+            subtitle="Split chart with peer average, individual peers, and toggles (Goal: >7.5%)"
+            datasets={{ data: ytd(BENCH_PRODUCT_FULL), yDomain: [0, 'auto'], formatter: (v) => [v !== null ? v.toFixed(1) + '%' : '—'], tickFmt: (v) => `${v}%`, refLine: { y: 7.5, color: '#10b981' } }}
+            type="singleMetric"
+          />
+
+          {/* Rebooking Rate — V4 */}
+          <BenchmarkV4Chart
+            title="Rebooking Rate — Peer Comparison"
+            subtitle="Split chart with peer average, individual peers, and toggles"
+            datasets={{ data: ytd(BENCH_REBOOK_FULL), yDomain: [0, 100], formatter: (v) => [v !== null ? v.toFixed(1) + '%' : '—'], tickFmt: (v) => `${v}%` }}
+            type="singleMetric"
+          />
+
+          {/* New Patient Retention — Bar Comparison */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>New Patient Retention — % Returned within 150 Days</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Q4 2025 cohort: Percentage of new patients who returned within 150 days</p>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={RETENTION_COMPARISON} layout="vertical" margin={{ top: 10, right: 40, left: 100, bottom: 0 }}>
+                <CartesianGrid horizontal={false} stroke={T.divider} />
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+                <YAxis type="category" dataKey="short" tick={{ fontSize: 12, fontWeight: 600 }} tickLine={false} axisLine={false} width={90} />
+                <Tooltip formatter={(v) => [`${v.toFixed(1)}%`]} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <Bar dataKey="value" name="Retention %" radius={[0, 4, 4, 0]} maxBarSize={28}>
+                  {RETENTION_COMPARISON.map((d, i) => (<Cell key={i} fill={d.color} />))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ─── Schedule View ─── */
 const ScheduleView = ({ onNavigate }) => {
   const days = Object.keys(WEEK_SCHEDULE);
@@ -1927,6 +2243,7 @@ const ProviderDashboard = () => {
   switch (currentView) {
     case 'overview': return <OverviewView onNavigate={navigate} />;
     case 'performance': return <PerformanceView onNavigate={navigate} />;
+    case 'performance_updated': return <PerformanceUpdatedView onNavigate={navigate} />;
     case 'schedule': return <ScheduleView onNavigate={navigate} />;
     case 'retail': return <RetailView onNavigate={navigate} />;
     case 'patients': return <PatientsView onNavigate={navigate} />;
