@@ -138,6 +138,33 @@ const REVENUE_EFFICIENCY_DATA = [
   { month: 'Dec', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
 ];
 
+/* ─── Cancel/No-Show Rate — CorralData (appointments with status -1/-2 or cancel_or_no_show_status != 0) ─── */
+const CANCEL_NOSHOW_DATA = [
+  { month: 'Jan', rate: 11.4 }, { month: 'Feb', rate: 12.5 }, { month: 'Mar', rate: 13.7 },
+  { month: 'Apr', rate: null }, { month: 'May', rate: null }, { month: 'Jun', rate: null },
+  { month: 'Jul', rate: null }, { month: 'Aug', rate: null }, { month: 'Sep', rate: null },
+  { month: 'Oct', rate: null }, { month: 'Nov', rate: null }, { month: 'Dec', rate: null },
+];
+
+/* ─── Product Sales as % of Total — CorralData (item_type='Product' sales_exc_tax / total) ─── */
+const PRODUCT_SALES_DATA = [
+  { month: 'Jan', pct: 2.9 }, { month: 'Feb', pct: 2.2 }, { month: 'Mar', pct: 1.0 },
+  { month: 'Apr', pct: null }, { month: 'May', pct: null }, { month: 'Jun', pct: null },
+  { month: 'Jul', pct: null }, { month: 'Aug', pct: null }, { month: 'Sep', pct: null },
+  { month: 'Oct', pct: null }, { month: 'Nov', pct: null }, { month: 'Dec', pct: null },
+];
+
+/* ─── MTD Rebooking Rate — CorralData (% of patients who returned or booked future appt) ─── */
+const REBOOKING_DATA = [
+  { month: 'Jan', rate: 44.5 }, { month: 'Feb', rate: 39.4 }, { month: 'Mar', rate: 40.3 },
+  { month: 'Apr', rate: null }, { month: 'May', rate: null }, { month: 'Jun', rate: null },
+  { month: 'Jul', rate: null }, { month: 'Aug', rate: null }, { month: 'Sep', rate: null },
+  { month: 'Oct', rate: null }, { month: 'Nov', rate: null }, { month: 'Dec', rate: null },
+];
+
+/* ─── New Patient Retention within 150 Days — CorralData (Q4 2025 cohort) ─── */
+const RETENTION_150D = { rate: 31.0, cohort: 'Q4 2025', newPatients: 71, returned: 22 };
+
 /* ─── Benchmark Providers (Top 20 by YTD Sales, filtered to similar profile) ─── */
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const nullPad = (arr) => [...arr, ...Array(12 - arr.length).fill(null)];
@@ -149,30 +176,35 @@ const BENCHMARK_PROVIDERS = [
     monthlySales: nullPad([94590, 77722, 40538]),
     syringes: nullPad([1.8, 1.8, 1.2]), btxUnits: nullPad([43, 44, 45]),
     revPerPatient: nullPad([739, 682, 687]), revPerNewPatient: nullPad([580, 530, 540]), revPerSchedHr: nullPad([1631, 1340, 699]),
+    cancelNoShow: nullPad([11.4, 9.6, 11.5]), productPct: nullPad([2.3, 3.3, 5.1]), rebooking: nullPad([68.5, 49.5, 39.6]), retention150d: 35.0,
   },
   {
     name: 'Janna Sheire', short: 'J. Sheire', practice: 'Ever/Body', location: 'Flatiron', color: '#8b5cf6',
     monthlySales: nullPad([107918, 98337, 43168]),
     syringes: nullPad([1.2, 1.2, 1.1]), btxUnits: nullPad([38, 39, 37]),
     revPerPatient: nullPad([600, 603, 553]), revPerNewPatient: nullPad([490, 485, 450]), revPerSchedHr: nullPad([1124, 1024, 450]),
+    cancelNoShow: nullPad([14.8, 10.0, 12.5]), productPct: nullPad([0.8, 0.1, 0.2]), rebooking: nullPad([34.9, 23.0, 11.9]), retention150d: 13.8,
   },
   {
     name: 'Kristin Dachenhausen', short: 'K. Dachen.', practice: 'Glo Med Spa', location: 'Wilmington', color: '#10b981',
     monthlySales: nullPad([82489, 124593, 60560]),
     syringes: nullPad([1.6, 1.8, 1.6]), btxUnits: nullPad([37, 35, 37]),
     revPerPatient: nullPad([801, 848, 704]), revPerNewPatient: nullPad([620, 660, 550]), revPerSchedHr: nullPad([825, 1246, 606]),
+    cancelNoShow: nullPad([11.9, 11.5, 15.5]), productPct: nullPad([5.1, 3.3, 2.1]), rebooking: nullPad([82.8, 77.2, 65.3]), retention150d: 50.0,
   },
   {
     name: 'Megan Abuelkhair', short: 'M. Abuelk.', practice: 'Pur Skin Clinic', location: 'Edmonds', color: '#f59e0b',
     monthlySales: nullPad([100541, 100033, 57241]),
     syringes: nullPad([2.1, 2.0, 1.9]), btxUnits: nullPad([41, 42, 43]),
     revPerPatient: nullPad([595, 685, 795]), revPerNewPatient: nullPad([470, 540, 620]), revPerSchedHr: nullPad([1183, 1177, 673]),
+    cancelNoShow: nullPad([17.8, 18.5, 17.6]), productPct: nullPad([2.6, 2.6, 2.8]), rebooking: nullPad([66.7, 59.8, 56.1]), retention150d: 39.2,
   },
   {
     name: 'Kachiu Lee', short: 'K. Lee', practice: 'Main Line Laser', location: 'Ardmore', color: '#ec4899',
     monthlySales: nullPad([94948, 117718, 42751]),
     syringes: nullPad([1.7, 1.7, 2.0]), btxUnits: nullPad([34, 35, 31]),
     revPerPatient: nullPad([693, 823, 620]), revPerNewPatient: nullPad([540, 640, 480]), revPerSchedHr: nullPad([1461, 1811, 658]),
+    cancelNoShow: nullPad([11.5, 12.5, 11.0]), productPct: nullPad([0.0, 0.0, 0.0]), rebooking: nullPad([49.0, 58.1, 52.1]), retention150d: 42.9,
   },
 ];
 
@@ -236,6 +268,25 @@ const BENCH_REV_PER_HR = MONTHS.map((m, i) => {
   return row;
 });
 
+/* Merged benchmark datasets — new metrics */
+const BENCH_CANCEL_DATA = MONTHS.map((m, i) => {
+  const row = { month: m, current: CANCEL_NOSHOW_DATA[i]?.rate ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.cancelNoShow[i]; });
+  return row;
+});
+
+const BENCH_PRODUCT_DATA = MONTHS.map((m, i) => {
+  const row = { month: m, current: PRODUCT_SALES_DATA[i]?.pct ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.productPct[i]; });
+  return row;
+});
+
+const BENCH_REBOOK_DATA = MONTHS.map((m, i) => {
+  const row = { month: m, current: REBOOKING_DATA[i]?.rate ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.rebooking[i]; });
+  return row;
+});
+
 /* Peer average datasets (for Variant 2) */
 const peerAvg = (arr, key) => {
   const vals = BENCHMARK_PROVIDERS.map(p => arr.find(r => r.month === key)?.[p.name]).filter(v => v !== null && v !== undefined);
@@ -258,6 +309,25 @@ const BENCH_EFF_AVG_DATA = MONTHS.map((m, i) => ({
   peerAvgRevPatient: peerAvg(BENCH_REV_PER_PATIENT, m) !== null ? Math.round(peerAvg(BENCH_REV_PER_PATIENT, m)) : null,
   peerAvgRevNew: peerAvg(BENCH_REV_PER_NEW, m) !== null ? Math.round(peerAvg(BENCH_REV_PER_NEW, m)) : null,
   peerAvgRevHr: peerAvg(BENCH_REV_PER_HR, m) !== null ? Math.round(peerAvg(BENCH_REV_PER_HR, m)) : null,
+}));
+
+/* Peer average datasets — new metrics (for Variant 2) */
+const BENCH_CANCEL_AVG_DATA = MONTHS.map((m, i) => ({
+  month: m,
+  currentRate: CANCEL_NOSHOW_DATA[i]?.rate ?? null,
+  peerAvgRate: peerAvg(BENCH_CANCEL_DATA, m) !== null ? Math.round(peerAvg(BENCH_CANCEL_DATA, m) * 10) / 10 : null,
+}));
+
+const BENCH_PRODUCT_AVG_DATA = MONTHS.map((m, i) => ({
+  month: m,
+  currentPct: PRODUCT_SALES_DATA[i]?.pct ?? null,
+  peerAvgPct: peerAvg(BENCH_PRODUCT_DATA, m) !== null ? Math.round(peerAvg(BENCH_PRODUCT_DATA, m) * 10) / 10 : null,
+}));
+
+const BENCH_REBOOK_AVG_DATA = MONTHS.map((m, i) => ({
+  month: m,
+  currentRate: REBOOKING_DATA[i]?.rate ?? null,
+  peerAvgRate: peerAvg(BENCH_REBOOK_DATA, m) !== null ? Math.round(peerAvg(BENCH_REBOOK_DATA, m) * 10) / 10 : null,
 }));
 
 /* Combined datasets for Variant 4 (individual peers + peer average in one array) */
@@ -300,6 +370,37 @@ const BENCH_REV_HR_FULL = MONTHS.map((m, i) => {
   row.peerAvg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
   return row;
 });
+
+/* Full datasets for new metrics (V4: individual peers + peer average) */
+const BENCH_CANCEL_FULL = MONTHS.map((m, i) => {
+  const row = { month: m, current: CANCEL_NOSHOW_DATA[i]?.rate ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.cancelNoShow[i]; });
+  const vals = BENCHMARK_PROVIDERS.map(p => p.cancelNoShow[i]).filter(v => v !== null && v !== undefined);
+  row.peerAvg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 : null;
+  return row;
+});
+
+const BENCH_PRODUCT_FULL = MONTHS.map((m, i) => {
+  const row = { month: m, current: PRODUCT_SALES_DATA[i]?.pct ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.productPct[i]; });
+  const vals = BENCHMARK_PROVIDERS.map(p => p.productPct[i]).filter(v => v !== null && v !== undefined);
+  row.peerAvg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 : null;
+  return row;
+});
+
+const BENCH_REBOOK_FULL = MONTHS.map((m, i) => {
+  const row = { month: m, current: REBOOKING_DATA[i]?.rate ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.rebooking[i]; });
+  const vals = BENCHMARK_PROVIDERS.map(p => p.rebooking[i]).filter(v => v !== null && v !== undefined);
+  row.peerAvg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 : null;
+  return row;
+});
+
+/* Retention 150-day comparison data (Q4 2025 cohort — single data point per provider) */
+const RETENTION_COMPARISON = [
+  { name: PROVIDER.name, short: 'You', value: RETENTION_150D.rate, color: T.navy },
+  ...BENCHMARK_PROVIDERS.map(p => ({ name: p.name, short: p.short, value: p.retention150d, color: p.color })),
+].filter(d => d.value !== null);
 
 /* Filter helper: only months with actual data (Jan–Mar for 2026) */
 const ytd = (arr) => arr.filter(d => YTD_MONTHS.includes(d.month));
@@ -799,6 +900,31 @@ const BenchmarkToggleChart = ({ title, subtitle, datasets, type }) => {
     );
   }
 
+  if (type === 'singleMetric') {
+    // Single metric chart (cancel/no-show, product sales, rebooking)
+    const { data, yDomain, formatter, tickFmt, refLine } = datasets;
+    return (
+      <Card style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>{title}</h3>
+        <p style={{ fontSize: 12, color: T.muted, margin: '0 0 12px' }}>{subtitle}</p>
+        {renderLegend()}
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke={T.divider} />
+            <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+            <YAxis domain={yDomain || ['auto', 'auto']} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={tickFmt || (v => v)} />
+            <Tooltip formatter={formatter} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+            {refLine && <ReferenceLine y={refLine.y} stroke={refLine.color} strokeDasharray="4 3" strokeWidth={1} />}
+            {visible.current && <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />}
+            {BENCHMARK_PROVIDERS.map(p => visible[p.name] && (
+              <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </Card>
+    );
+  }
+
   // type === 'efficiency'
   const charts = [
     { data: datasets.revPatient, title: 'Avg Revenue / Patient', fmt: '$' },
@@ -890,6 +1016,31 @@ const BenchmarkV4Chart = ({ title, subtitle, datasets, type }) => {
       </ResponsiveContainer>
     </div>
   );
+
+  if (type === 'singleMetric') {
+    const { data, yDomain, formatter, tickFmt, refLine } = datasets;
+    return (
+      <Card style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>{title}</h3>
+        <p style={{ fontSize: 12, color: T.muted, margin: '0 0 12px' }}>{subtitle}</p>
+        {renderLegend()}
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart data={data} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke={T.divider} />
+            <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+            <YAxis domain={yDomain || ['auto', 'auto']} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={tickFmt || (v => v)} />
+            <Tooltip formatter={formatter} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+            {refLine && <ReferenceLine y={refLine.y} stroke={refLine.color} strokeDasharray="4 3" strokeWidth={1} />}
+            {visible.current && <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />}
+            {visible.peerAvg && <Line type="monotone" dataKey="peerAvg" name="Peer Avg" stroke="#9333ea" strokeWidth={2.5} strokeDasharray="6 3" dot={{ r: 3, fill: '#9333ea', strokeWidth: 0 }} connectNulls={false} />}
+            {BENCHMARK_PROVIDERS.map(p => visible[p.name] && (
+              <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </Card>
+    );
+  }
 
   if (type === 'injectables') {
     return (
@@ -1068,6 +1219,65 @@ const PerformanceView = ({ onNavigate }) => {
               <Line type="monotone" dataKey="revPerNetSchedHr" name="Revenue / Net Scheduled Hour" stroke="#7dd3fc" strokeWidth={3} dot={{ r: 5, fill: '#7dd3fc' }} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
+        </Card>
+
+        {/* Cancel/No-Show Rate Chart */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Cancel + No-Show Rate — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Percentage of appointments cancelled or no-showed (Goal: &lt;5%)</p>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={ytd(CANCEL_NOSHOW_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 'auto']} />
+              <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <ReferenceLine y={5} stroke="#ef4444" strokeDasharray="4 3" strokeWidth={1} label={{ value: 'Goal 5%', position: 'right', fill: '#ef4444', fontSize: 10 }} />
+              <Line type="monotone" dataKey="rate" name="Cancel/No-Show Rate" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Product Sales as % of Total Chart */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Product Sales as % of Total Revenue — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Retail product sales as a percentage of total sales (Goal: &gt;7.5%)</p>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={ytd(PRODUCT_SALES_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 'auto']} />
+              <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <ReferenceLine y={7.5} stroke="#10b981" strokeDasharray="4 3" strokeWidth={1} label={{ value: 'Goal 7.5%', position: 'right', fill: '#10b981', fontSize: 10 }} />
+              <Line type="monotone" dataKey="pct" name="Product Sales %" stroke={T.gold} strokeWidth={3} dot={{ r: 5, fill: T.gold }} connectNulls={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* MTD Rebooking Rate Chart */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Rebooking Rate — Monthly</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Percentage of patients who returned or booked a future appointment after their first visit that month</p>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={ytd(REBOOKING_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={T.divider} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
+              <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <Line type="monotone" dataKey="rate" name="Rebooking Rate" stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* New Patient Retention — 150 Day */}
+        <Card style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>New Patient Retention — % Returned within 150 Days</h3>
+          <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Q4 2025 cohort: {RETENTION_150D.returned} of {RETENTION_150D.newPatients} new patients returned ({RETENTION_150D.rate}%)</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ flex: 1, height: 28, background: '#f3f4f6', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+              <div style={{ width: `${RETENTION_150D.rate}%`, height: '100%', background: T.navy, borderRadius: 8, transition: 'width 0.5s' }} />
+            </div>
+            <span style={{ fontSize: 20, fontWeight: 700, color: T.navy, minWidth: 60 }}>{RETENTION_150D.rate}%</span>
+          </div>
         </Card>
 
         {/* Service Breakdown Table */}
@@ -1305,6 +1515,196 @@ const PerformanceView = ({ onNavigate }) => {
             datasets={{ revPatient: ytd(BENCH_REV_PATIENT_FULL), revNew: ytd(BENCH_REV_NEW_FULL), revHr: ytd(BENCH_REV_HR_FULL) }}
             type="efficiency"
           />
+
+          {/* ═══════════════════════════════════════════════════════════════
+              CANCEL / NO-SHOW RATE — PEER BENCHMARK
+              ═══════════════════════════════════════════════════════════════ */}
+
+          {/* ── CANCEL/NO-SHOW — VARIANT 1: All Peers ── */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Cancel/No-Show Rate — Variant 1: All Peers</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your cancel + no-show rate vs benchmark providers (Goal: &lt;5%)</p>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={ytd(BENCH_CANCEL_DATA)} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 'auto']} />
+                <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <ReferenceLine y={5} stroke="#ef4444" strokeDasharray="4 3" strokeWidth={1} />
+                <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                {BENCHMARK_PROVIDERS.map(p => (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* ── CANCEL/NO-SHOW — VARIANT 2: Peer Average Overlay ── */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Cancel/No-Show Rate — Variant 2: Peer Average</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your rate (solid) vs peer group average (dashed)</p>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={ytd(BENCH_CANCEL_AVG_DATA)} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 'auto']} />
+                <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 10, paddingBottom: 8 }} />
+                <ReferenceLine y={5} stroke="#ef4444" strokeDasharray="4 3" strokeWidth={1} />
+                <Line type="monotone" dataKey="currentRate" name="Your Rate" stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                <Line type="monotone" dataKey="peerAvgRate" name="Peer Avg" stroke={T.navy} strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* ── CANCEL/NO-SHOW — VARIANT 3: Toggle ── */}
+          <BenchmarkToggleChart
+            title="Cancel/No-Show Rate — Variant 3: Toggle"
+            subtitle="Click provider names to show/hide (Goal: <5%)"
+            datasets={{ data: ytd(BENCH_CANCEL_DATA), yDomain: [0, 'auto'], formatter: (v) => [v !== null ? v.toFixed(1) + '%' : '—'], tickFmt: (v) => `${v}%`, refLine: { y: 5, color: '#ef4444' } }}
+            type="singleMetric"
+          />
+
+          {/* ── CANCEL/NO-SHOW — VARIANT 4: Full Comparison ── */}
+          <BenchmarkV4Chart
+            title="Cancel/No-Show Rate — Variant 4: Full Comparison"
+            subtitle="Split chart with peer average, individual peers, and toggles"
+            datasets={{ data: ytd(BENCH_CANCEL_FULL), yDomain: [0, 'auto'], formatter: (v) => [v !== null ? v.toFixed(1) + '%' : '—'], tickFmt: (v) => `${v}%`, refLine: { y: 5, color: '#ef4444' } }}
+            type="singleMetric"
+          />
+
+          {/* ═══════════════════════════════════════════════════════════════
+              PRODUCT SALES % — PEER BENCHMARK
+              ═══════════════════════════════════════════════════════════════ */}
+
+          {/* ── PRODUCT SALES — VARIANT 1: All Peers ── */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Product Sales % — Variant 1: All Peers</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Product sales as % of total revenue vs benchmark providers (Goal: &gt;7.5%)</p>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={ytd(BENCH_PRODUCT_DATA)} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 'auto']} />
+                <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <ReferenceLine y={7.5} stroke="#10b981" strokeDasharray="4 3" strokeWidth={1} />
+                <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                {BENCHMARK_PROVIDERS.map(p => (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* ── PRODUCT SALES — VARIANT 2: Peer Average Overlay ── */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Product Sales % — Variant 2: Peer Average</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your product sales % (solid) vs peer group average (dashed)</p>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={ytd(BENCH_PRODUCT_AVG_DATA)} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 'auto']} />
+                <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 10, paddingBottom: 8 }} />
+                <ReferenceLine y={7.5} stroke="#10b981" strokeDasharray="4 3" strokeWidth={1} />
+                <Line type="monotone" dataKey="currentPct" name="Your Product %" stroke={T.gold} strokeWidth={3} dot={{ r: 4, fill: T.gold }} connectNulls={false} />
+                <Line type="monotone" dataKey="peerAvgPct" name="Peer Avg" stroke={T.gold} strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* ── PRODUCT SALES — VARIANT 3: Toggle ── */}
+          <BenchmarkToggleChart
+            title="Product Sales % — Variant 3: Toggle"
+            subtitle="Click provider names to show/hide (Goal: >7.5%)"
+            datasets={{ data: ytd(BENCH_PRODUCT_DATA), yDomain: [0, 'auto'], formatter: (v) => [v !== null ? v.toFixed(1) + '%' : '—'], tickFmt: (v) => `${v}%`, refLine: { y: 7.5, color: '#10b981' } }}
+            type="singleMetric"
+          />
+
+          {/* ── PRODUCT SALES — VARIANT 4: Full Comparison ── */}
+          <BenchmarkV4Chart
+            title="Product Sales % — Variant 4: Full Comparison"
+            subtitle="Split chart with peer average, individual peers, and toggles"
+            datasets={{ data: ytd(BENCH_PRODUCT_FULL), yDomain: [0, 'auto'], formatter: (v) => [v !== null ? v.toFixed(1) + '%' : '—'], tickFmt: (v) => `${v}%`, refLine: { y: 7.5, color: '#10b981' } }}
+            type="singleMetric"
+          />
+
+          {/* ═══════════════════════════════════════════════════════════════
+              REBOOKING RATE — PEER BENCHMARK
+              ═══════════════════════════════════════════════════════════════ */}
+
+          {/* ── REBOOKING RATE — VARIANT 1: All Peers ── */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Rebooking Rate — Variant 1: All Peers</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>MTD rebooking rate vs benchmark providers</p>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={ytd(BENCH_REBOOK_DATA)} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
+                <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                {BENCHMARK_PROVIDERS.map(p => (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* ── REBOOKING RATE — VARIANT 2: Peer Average Overlay ── */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Rebooking Rate — Variant 2: Peer Average</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your rebooking rate (solid) vs peer group average (dashed)</p>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={ytd(BENCH_REBOOK_AVG_DATA)} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
+                <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) + '%' : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 10, paddingBottom: 8 }} />
+                <Line type="monotone" dataKey="currentRate" name="Your Rate" stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                <Line type="monotone" dataKey="peerAvgRate" name="Peer Avg" stroke={T.navy} strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* ── REBOOKING RATE — VARIANT 3: Toggle ── */}
+          <BenchmarkToggleChart
+            title="Rebooking Rate — Variant 3: Toggle"
+            subtitle="Click provider names to show/hide"
+            datasets={{ data: ytd(BENCH_REBOOK_DATA), yDomain: [0, 100], formatter: (v) => [v !== null ? v.toFixed(1) + '%' : '—'], tickFmt: (v) => `${v}%` }}
+            type="singleMetric"
+          />
+
+          {/* ── REBOOKING RATE — VARIANT 4: Full Comparison ── */}
+          <BenchmarkV4Chart
+            title="Rebooking Rate — Variant 4: Full Comparison"
+            subtitle="Split chart with peer average, individual peers, and toggles"
+            datasets={{ data: ytd(BENCH_REBOOK_FULL), yDomain: [0, 100], formatter: (v) => [v !== null ? v.toFixed(1) + '%' : '—'], tickFmt: (v) => `${v}%` }}
+            type="singleMetric"
+          />
+
+          {/* ═══════════════════════════════════════════════════════════════
+              NEW PATIENT RETENTION (150 DAYS) — PEER COMPARISON
+              ═══════════════════════════════════════════════════════════════ */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>New Patient Retention — % Returned within 150 Days</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Q4 2025 cohort: Percentage of new patients who returned within 150 days</p>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={RETENTION_COMPARISON} layout="vertical" margin={{ top: 10, right: 40, left: 100, bottom: 0 }}>
+                <CartesianGrid horizontal={false} stroke={T.divider} />
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+                <YAxis type="category" dataKey="short" tick={{ fontSize: 12, fontWeight: 600 }} tickLine={false} axisLine={false} width={90} />
+                <Tooltip formatter={(v) => [`${v.toFixed(1)}%`]} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <Bar dataKey="value" name="Retention %" radius={[0, 4, 4, 0]} maxBarSize={28}>
+                  {RETENTION_COMPARISON.map((d, i) => (
+                    <Cell key={i} fill={d.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
         </div>
       </div>
     </div>
