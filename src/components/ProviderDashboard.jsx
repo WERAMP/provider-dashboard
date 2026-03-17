@@ -135,6 +135,127 @@ const REVENUE_EFFICIENCY_DATA = [
   { month: 'Dec', avgRevPerPatient: null, avgRevPerNewPatient: null, revPerNetSchedHr: null },
 ];
 
+/* ─── Benchmark Providers (Top 20 by YTD Sales, filtered to similar profile) ─── */
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const nullPad = (arr) => [...arr, ...Array(12 - arr.length).fill(null)];
+
+const BENCHMARK_PROVIDERS = [
+  {
+    name: 'Taylor Reed', short: 'T. Reed', practice: 'Destination Aesthetics', location: 'Roseville', color: '#ef4444',
+    monthlySales: nullPad([58000, 65000, 52000]),
+    syringes: nullPad([2.1, 2.4, 2.0]), btxUnits: nullPad([42, 44, 39]),
+    revPerPatient: nullPad([430, 455, 410]), revPerNewPatient: nullPad([395, 420, 380]), revPerSchedHr: nullPad([155, 168, 149]),
+  },
+  {
+    name: 'Jordan Marsh', short: 'J. Marsh', practice: 'Reflections Center', location: 'Livingston', color: '#8b5cf6',
+    monthlySales: nullPad([66000, 59000, 54000]),
+    syringes: nullPad([2.6, 2.3, 2.4]), btxUnits: nullPad([36, 38, 34]),
+    revPerPatient: nullPad([398, 425, 390]), revPerNewPatient: nullPad([370, 400, 365]), revPerSchedHr: nullPad([142, 152, 138]),
+  },
+  {
+    name: 'Avery Chen', short: 'A. Chen', practice: 'SkynBar', location: 'Studio City', color: '#10b981',
+    monthlySales: nullPad([55000, 68000, 61000]),
+    syringes: nullPad([2.0, 2.2, 2.3]), btxUnits: nullPad([40, 43, 41]),
+    revPerPatient: nullPad([445, 460, 435]), revPerNewPatient: nullPad([410, 430, 400]), revPerSchedHr: nullPad([160, 172, 158]),
+  },
+  {
+    name: 'Morgan Ellis', short: 'M. Ellis', practice: 'Ever/Body', location: 'Bethesda', color: '#f59e0b',
+    monthlySales: nullPad([70000, 63000, 50000]),
+    syringes: nullPad([2.4, 2.6, 2.2]), btxUnits: nullPad([35, 37, 33]),
+    revPerPatient: nullPad([420, 440, 405]), revPerNewPatient: nullPad([388, 415, 375]), revPerSchedHr: nullPad([150, 160, 144]),
+  },
+  {
+    name: 'Casey Pham', short: 'C. Pham', practice: 'Synergy MedAesthetics', location: 'Boca Raton', color: '#ec4899',
+    monthlySales: nullPad([60000, 72000, 56000]),
+    syringes: nullPad([2.2, 2.5, 2.3]), btxUnits: nullPad([44, 46, 40]),
+    revPerPatient: nullPad([405, 435, 415]), revPerNewPatient: nullPad([375, 405, 385]), revPerSchedHr: nullPad([145, 158, 150]),
+  },
+];
+
+/* Merged benchmark datasets */
+const BENCH_SALES_DATA = MONTHS.map((m, i) => {
+  const row = { month: m, current: MONTHLY_SALES[i]?.sales ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.monthlySales[i]; });
+  row.gold = Math.round(TIERS.gold.annual / 12);
+  row.platinum = Math.round(TIERS.platinum.annual / 12);
+  row.diamond = Math.round(TIERS.diamond.annual / 12);
+  return row;
+});
+
+const BENCH_CUMULATIVE_DATA = (() => {
+  const cums = { current: 0 };
+  BENCHMARK_PROVIDERS.forEach(p => { cums[p.name] = 0; });
+  let cumGold = 0, cumPlat = 0, cumDiam = 0;
+  return MONTHS.map((m, i) => {
+    cumGold += Math.round(TIERS.gold.annual / 12);
+    cumPlat += Math.round(TIERS.platinum.annual / 12);
+    cumDiam += Math.round(TIERS.diamond.annual / 12);
+    const s = MONTHLY_SALES[i]?.sales;
+    if (s !== null && s !== undefined) cums.current += s;
+    const row = { month: m, current: s !== null && s !== undefined ? cums.current : null, gold: cumGold, platinum: cumPlat, diamond: cumDiam };
+    BENCHMARK_PROVIDERS.forEach(p => {
+      const v = p.monthlySales[i];
+      if (v !== null && v !== undefined) cums[p.name] += v;
+      row[p.name] = v !== null && v !== undefined ? cums[p.name] : null;
+    });
+    return row;
+  });
+})();
+
+const BENCH_SYRINGES_DATA = MONTHS.map((m, i) => {
+  const row = { month: m, current: INJECTABLES_DATA[i]?.avgSyringes ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.syringes[i]; });
+  return row;
+});
+
+const BENCH_BTX_DATA = MONTHS.map((m, i) => {
+  const row = { month: m, current: INJECTABLES_DATA[i]?.avgBTXUnits ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.btxUnits[i]; });
+  return row;
+});
+
+const BENCH_REV_PER_PATIENT = MONTHS.map((m, i) => {
+  const row = { month: m, current: REVENUE_EFFICIENCY_DATA[i]?.avgRevPerPatient ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.revPerPatient[i]; });
+  return row;
+});
+
+const BENCH_REV_PER_NEW = MONTHS.map((m, i) => {
+  const row = { month: m, current: REVENUE_EFFICIENCY_DATA[i]?.avgRevPerNewPatient ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.revPerNewPatient[i]; });
+  return row;
+});
+
+const BENCH_REV_PER_HR = MONTHS.map((m, i) => {
+  const row = { month: m, current: REVENUE_EFFICIENCY_DATA[i]?.revPerNetSchedHr ?? null };
+  BENCHMARK_PROVIDERS.forEach(p => { row[p.name] = p.revPerSchedHr[i]; });
+  return row;
+});
+
+/* Peer average datasets (for Variant 2) */
+const peerAvg = (arr, key) => {
+  const vals = BENCHMARK_PROVIDERS.map(p => arr.find(r => r.month === key)?.[p.name]).filter(v => v !== null && v !== undefined);
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+};
+
+const BENCH_INJ_AVG_DATA = MONTHS.map((m, i) => ({
+  month: m,
+  currentSyringes: INJECTABLES_DATA[i]?.avgSyringes ?? null,
+  currentBTX: INJECTABLES_DATA[i]?.avgBTXUnits ?? null,
+  peerAvgSyringes: peerAvg(BENCH_SYRINGES_DATA, m) !== null ? Math.round(peerAvg(BENCH_SYRINGES_DATA, m) * 10) / 10 : null,
+  peerAvgBTX: peerAvg(BENCH_BTX_DATA, m) !== null ? Math.round(peerAvg(BENCH_BTX_DATA, m)) : null,
+}));
+
+const BENCH_EFF_AVG_DATA = MONTHS.map((m, i) => ({
+  month: m,
+  currentRevPatient: REVENUE_EFFICIENCY_DATA[i]?.avgRevPerPatient ?? null,
+  currentRevNew: REVENUE_EFFICIENCY_DATA[i]?.avgRevPerNewPatient ?? null,
+  currentRevHr: REVENUE_EFFICIENCY_DATA[i]?.revPerNetSchedHr ?? null,
+  peerAvgRevPatient: peerAvg(BENCH_REV_PER_PATIENT, m) !== null ? Math.round(peerAvg(BENCH_REV_PER_PATIENT, m)) : null,
+  peerAvgRevNew: peerAvg(BENCH_REV_PER_NEW, m) !== null ? Math.round(peerAvg(BENCH_REV_PER_NEW, m)) : null,
+  peerAvgRevHr: peerAvg(BENCH_REV_PER_HR, m) !== null ? Math.round(peerAvg(BENCH_REV_PER_HR, m)) : null,
+}));
+
 const YTD_SALES = MONTHLY_SALES.reduce((s, d) => s + (d.sales || 0), 0);
 const MONTHS_ELAPSED = MONTHLY_SALES.filter(d => d.sales !== null).length;
 
@@ -554,6 +675,115 @@ const TierProgressCard = () => {
   );
 };
 
+/* ─── Benchmark Toggle Chart (Variant 3) ─── */
+const BenchmarkToggleChart = ({ title, subtitle, datasets, type }) => {
+  const [visible, setVisible] = useState(() => {
+    const init = { current: true };
+    BENCHMARK_PROVIDERS.forEach(p => { init[p.name] = true; });
+    return init;
+  });
+  const toggle = (key) => setVisible(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const allNames = ['current', ...BENCHMARK_PROVIDERS.map(p => p.name)];
+  const colorMap = { current: T.navy };
+  BENCHMARK_PROVIDERS.forEach(p => { colorMap[p.name] = p.color; });
+  const labelMap = { current: PROVIDER.name + ' (You)' };
+  BENCHMARK_PROVIDERS.forEach(p => { labelMap[p.name] = p.short; });
+
+  const renderLegend = () => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+      {allNames.map(name => (
+        <button key={name} onClick={() => toggle(name)} style={{
+          display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 6,
+          border: `1px solid ${visible[name] ? colorMap[name] : T.border}`,
+          background: visible[name] ? colorMap[name] + '15' : '#f9fafb',
+          cursor: 'pointer', fontSize: 11, fontWeight: 600,
+          color: visible[name] ? colorMap[name] : T.muted,
+          opacity: visible[name] ? 1 : 0.5, transition: 'all 0.15s',
+        }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: colorMap[name], opacity: visible[name] ? 1 : 0.3 }} />
+          {labelMap[name]}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (type === 'injectables') {
+    return (
+      <Card style={{ marginBottom: 24 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>{title}</h3>
+        <p style={{ fontSize: 12, color: T.muted, margin: '0 0 12px' }}>{subtitle}</p>
+        {renderLegend()}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div>
+            <h4 style={{ fontSize: 12, fontWeight: 700, color: T.navy, marginBottom: 8 }}>Avg Syringes / Injectables Appt</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={datasets.syringes} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 4]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                {visible.current && <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />}
+                {BENCHMARK_PROVIDERS.map(p => visible[p.name] && (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div>
+            <h4 style={{ fontSize: 12, fontWeight: 700, color: T.navy, marginBottom: 8 }}>Avg BTX Units / Botox Appt</h4>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={datasets.btx} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 60]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <Tooltip formatter={(v) => [v !== null ? Math.round(v) + ' units' : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                {visible.current && <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />}
+                {BENCHMARK_PROVIDERS.map(p => visible[p.name] && (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // type === 'efficiency'
+  const charts = [
+    { data: datasets.revPatient, title: 'Avg Revenue / Patient', fmt: '$' },
+    { data: datasets.revNew, title: 'Avg Revenue / New Patient', fmt: '$' },
+    { data: datasets.revHr, title: 'Revenue / Net Sched Hr', fmt: '$' },
+  ];
+  return (
+    <Card style={{ marginBottom: 24 }}>
+      <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>{title}</h3>
+      <p style={{ fontSize: 12, color: T.muted, margin: '0 0 12px' }}>{subtitle}</p>
+      {renderLegend()}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        {charts.map(ch => (
+          <div key={ch.title}>
+            <h4 style={{ fontSize: 12, fontWeight: 700, color: T.navy, marginBottom: 8 }}>{ch.title}</h4>
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={ch.data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${ch.fmt}${v}`} />
+                <Tooltip formatter={(v) => [v !== null ? ch.fmt + Math.round(v) : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                {visible.current && <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />}
+                {BENCHMARK_PROVIDERS.map(p => visible[p.name] && (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+};
+
 /* ─── Performance View ─── */
 const PerformanceView = ({ onNavigate }) => {
   const mtdSales = MONTHLY_SALES.find(d => d.month === 'Mar')?.sales || 0;
@@ -710,6 +940,205 @@ const PerformanceView = ({ onNavigate }) => {
             </table>
           </div>
         </Card>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            PEER BENCHMARK SECTION
+            ═══════════════════════════════════════════════════════════════ */}
+        <div style={{ marginTop: 48, borderTop: `2px solid ${T.gold}`, paddingTop: 32 }}>
+          <h2 style={{ fontFamily: T.serif, fontSize: 28, fontWeight: 400, color: T.navy, margin: '0 0 6px' }}>
+            Peer Benchmark
+          </h2>
+          <p style={{ fontSize: 13, color: T.muted, margin: '0 0 20px' }}>
+            Top providers with similar service mix and net scheduled hours — selected from top 20 by YTD service sales across AMP
+          </p>
+
+          {/* Legend */}
+          <Card style={{ marginBottom: 24, padding: '16px 24px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 12, height: 3, background: T.navy, display: 'inline-block', borderRadius: 2 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.navy }}>{PROVIDER.name} (You)</span>
+              </div>
+              {BENCHMARK_PROVIDERS.map(p => (
+                <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 12, height: 3, background: p.color, display: 'inline-block', borderRadius: 2 }} />
+                  <span style={{ fontSize: 12, color: T.body }}>{p.short}</span>
+                  <span style={{ fontSize: 10, color: T.muted }}>— {p.practice}, {p.location}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Chart A: Service Sales vs Peers — Monthly (bars + lines) */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Service Sales vs Peers — Monthly</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your monthly sales (bars) compared to 5 benchmark providers (lines)</p>
+            <ResponsiveContainer width="100%" height={380}>
+              <ComposedChart data={BENCH_SALES_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={fmtK} />
+                <Tooltip formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+                <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 10, paddingBottom: 8 }} />
+                <Bar dataKey="current" name={PROVIDER.name} radius={[3, 3, 0, 0]} maxBarSize={40}>
+                  {BENCH_SALES_DATA.map((d, i) => (
+                    <Cell key={i} fill={d.current !== null ? T.gold : '#e5e7eb'} />
+                  ))}
+                </Bar>
+                {BENCHMARK_PROVIDERS.map(p => (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={2} dot={{ r: 3, fill: p.color }} connectNulls={false} />
+                ))}
+                <ReferenceLine y={Math.round(TIERS.gold.annual / 12)} stroke={TIERS.gold.color} strokeDasharray="4 3" strokeWidth={1} />
+                <ReferenceLine y={Math.round(TIERS.platinum.annual / 12)} stroke={TIERS.platinum.color} strokeDasharray="4 3" strokeWidth={1} />
+                <ReferenceLine y={Math.round(TIERS.diamond.annual / 12)} stroke={TIERS.diamond.color} strokeDasharray="4 3" strokeWidth={1} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* Chart B: Cumulative Sales vs Peers — YTD */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Cumulative Sales vs Peers — YTD</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Aggregate 2026 service sales progression compared to peers and tier targets</p>
+            <ResponsiveContainer width="100%" height={380}>
+              <LineChart data={BENCH_CUMULATIVE_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={fmtK} />
+                <Tooltip formatter={(v, name) => [v !== null ? '$' + Math.round(v).toLocaleString() : '—', name]} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+                <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 10, paddingBottom: 8 }} />
+                <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 5, fill: T.navy }} connectNulls={false} />
+                {BENCHMARK_PROVIDERS.map(p => (
+                  <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={2} dot={{ r: 3, fill: p.color }} connectNulls={false} />
+                ))}
+                <Line type="monotone" dataKey="gold" name="Gold Tier" stroke={TIERS.gold.color} strokeWidth={1} strokeDasharray="6 3" dot={false} />
+                <Line type="monotone" dataKey="platinum" name="Platinum Tier" stroke={TIERS.platinum.color} strokeWidth={1} strokeDasharray="6 3" dot={false} />
+                <Line type="monotone" dataKey="diamond" name="Diamond Tier" stroke={TIERS.diamond.color} strokeWidth={1} strokeDasharray="6 3" dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* ── INJECTABLES EFFICIENCY — VARIANT 1: Mini Charts (Split by Metric) ── */}
+          <div style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12 }}>Injectables Efficiency — Variant 1: Split Charts</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Card>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: T.navy, marginBottom: 12 }}>Avg Syringes / Injectables Appt</h4>
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={BENCH_SYRINGES_DATA} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke={T.divider} />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <YAxis domain={[0, 4]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <Tooltip formatter={(v) => [v !== null ? v.toFixed(1) : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                    <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                    {BENCHMARK_PROVIDERS.map(p => (
+                      <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </Card>
+              <Card>
+                <h4 style={{ fontSize: 14, fontWeight: 700, color: T.navy, marginBottom: 12 }}>Avg BTX Units / Botox Appt</h4>
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={BENCH_BTX_DATA} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke={T.divider} />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <YAxis domain={[0, 60]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <Tooltip formatter={(v) => [v !== null ? Math.round(v) + ' units' : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                    <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                    {BENCHMARK_PROVIDERS.map(p => (
+                      <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </Card>
+            </div>
+          </div>
+
+          {/* ── INJECTABLES EFFICIENCY — VARIANT 2: Peer Average Overlay ── */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Injectables Efficiency — Variant 2: Peer Average</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your metrics (solid) vs peer group average (dashed)</p>
+            <ResponsiveContainer width="100%" height={340}>
+              <ComposedChart data={BENCH_INJ_AVG_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis yAxisId="left" orientation="left" domain={[0, 4]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} label={{ value: 'Syringes', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 10, fill: T.muted } }} />
+                <YAxis yAxisId="right" orientation="right" domain={[0, 60]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} label={{ value: 'BTX Units', angle: 90, position: 'insideRight', offset: 10, style: { fontSize: 10, fill: T.muted } }} />
+                <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 10, paddingBottom: 8 }} />
+                <Line yAxisId="left" type="monotone" dataKey="currentSyringes" name="Your Syringes" stroke={T.gold} strokeWidth={3} dot={{ r: 4, fill: T.gold }} connectNulls={false} />
+                <Line yAxisId="left" type="monotone" dataKey="peerAvgSyringes" name="Peer Avg Syringes" stroke={T.gold} strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls={false} />
+                <Line yAxisId="right" type="monotone" dataKey="currentBTX" name="Your BTX Units" stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                <Line yAxisId="right" type="monotone" dataKey="peerAvgBTX" name="Peer Avg BTX" stroke={T.navy} strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* ── INJECTABLES EFFICIENCY — VARIANT 3: Toggle ── */}
+          <BenchmarkToggleChart
+            title="Injectables Efficiency — Variant 3: Toggle"
+            subtitle="Click provider names to show/hide"
+            datasets={{ syringes: BENCH_SYRINGES_DATA, btx: BENCH_BTX_DATA }}
+            type="injectables"
+          />
+
+          {/* ── REVENUE EFFICIENCY — VARIANT 1: Mini Charts (Split by Metric) ── */}
+          <div style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12 }}>Revenue Efficiency — Variant 1: Split Charts</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              {[
+                { data: BENCH_REV_PER_PATIENT, title: 'Avg Revenue / Patient', fmt: (v) => v !== null ? '$' + Math.round(v) : '—' },
+                { data: BENCH_REV_PER_NEW, title: 'Avg Revenue / New Patient', fmt: (v) => v !== null ? '$' + Math.round(v) : '—' },
+                { data: BENCH_REV_PER_HR, title: 'Revenue / Net Sched Hr', fmt: (v) => v !== null ? '$' + Math.round(v) : '—' },
+              ].map((chart) => (
+                <Card key={chart.title}>
+                  <h4 style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 12 }}>{chart.title}</h4>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart data={chart.data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid vertical={false} stroke={T.divider} />
+                      <XAxis dataKey="month" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                      <Tooltip formatter={(v) => [chart.fmt(v)]} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                      <Line type="monotone" dataKey="current" name={PROVIDER.name} stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                      {BENCHMARK_PROVIDERS.map(p => (
+                        <Line key={p.name} type="monotone" dataKey={p.name} name={p.short} stroke={p.color} strokeWidth={1.5} dot={{ r: 2, fill: p.color }} connectNulls={false} />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* ── REVENUE EFFICIENCY — VARIANT 2: Peer Average Overlay ── */}
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Revenue Efficiency — Variant 2: Peer Average</h3>
+            <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your metrics (solid) vs peer group average (dashed)</p>
+            <ResponsiveContainer width="100%" height={340}>
+              <LineChart data={BENCH_EFF_AVG_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid vertical={false} stroke={T.divider} />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                <Tooltip formatter={(v) => [v !== null ? '$' + Math.round(v) : '—']} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 10, paddingBottom: 8 }} />
+                <Line type="monotone" dataKey="currentRevPatient" name="Your Rev/Patient" stroke={T.navy} strokeWidth={3} dot={{ r: 4, fill: T.navy }} connectNulls={false} />
+                <Line type="monotone" dataKey="peerAvgRevPatient" name="Peer Avg Rev/Patient" stroke={T.navy} strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls={false} />
+                <Line type="monotone" dataKey="currentRevNew" name="Your Rev/New Patient" stroke={T.gold} strokeWidth={3} dot={{ r: 4, fill: T.gold }} connectNulls={false} />
+                <Line type="monotone" dataKey="peerAvgRevNew" name="Peer Avg Rev/New" stroke={T.gold} strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls={false} />
+                <Line type="monotone" dataKey="currentRevHr" name="Your Rev/Sched Hr" stroke="#7dd3fc" strokeWidth={3} dot={{ r: 4, fill: '#7dd3fc' }} connectNulls={false} />
+                <Line type="monotone" dataKey="peerAvgRevHr" name="Peer Avg Rev/Hr" stroke="#7dd3fc" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* ── REVENUE EFFICIENCY — VARIANT 3: Toggle ── */}
+          <BenchmarkToggleChart
+            title="Revenue Efficiency — Variant 3: Toggle"
+            subtitle="Click provider names to show/hide"
+            datasets={{ revPatient: BENCH_REV_PER_PATIENT, revNew: BENCH_REV_PER_NEW, revHr: BENCH_REV_PER_HR }}
+            type="efficiency"
+          />
+        </div>
       </div>
     </div>
   );
