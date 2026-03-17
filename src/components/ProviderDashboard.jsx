@@ -103,6 +103,9 @@ const CUMULATIVE_DATA = (() => {
   });
 })();
 
+/* Months with actual data (YTD through current month) — used to filter non-tier charts */
+const YTD_MONTHS = MONTHLY_SALES.filter(d => d.sales !== null).map(d => d.month);
+
 /* Injectables KPI data — CorralData (filler line_items/appts = avg syringes; BTX rev/appts / $14 ≈ avg units) */
 const INJECTABLES_DATA = [
   { month: 'Jan', avgSyringes: 1.4, avgBTXUnits: 33 },
@@ -256,6 +259,9 @@ const BENCH_EFF_AVG_DATA = MONTHS.map((m, i) => ({
   peerAvgRevNew: peerAvg(BENCH_REV_PER_NEW, m) !== null ? Math.round(peerAvg(BENCH_REV_PER_NEW, m)) : null,
   peerAvgRevHr: peerAvg(BENCH_REV_PER_HR, m) !== null ? Math.round(peerAvg(BENCH_REV_PER_HR, m)) : null,
 }));
+
+/* Filter helper: only months with actual data (Jan–Mar for 2026) */
+const ytd = (arr) => arr.filter(d => YTD_MONTHS.includes(d.month));
 
 const YTD_SALES = MONTHLY_SALES.reduce((s, d) => s + (d.sales || 0), 0);
 const MONTHS_ELAPSED = MONTHLY_SALES.filter(d => d.sales !== null).length;
@@ -865,7 +871,7 @@ const PerformanceView = ({ onNavigate }) => {
           <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Injectables Efficiency — Monthly</h3>
           <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Average syringes per injectables appointment vs average BTX units per Botox appointment</p>
           <ResponsiveContainer width="100%" height={340}>
-            <ComposedChart data={INJECTABLES_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+            <ComposedChart data={ytd(INJECTABLES_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke={T.divider} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
               <YAxis
@@ -905,7 +911,7 @@ const PerformanceView = ({ onNavigate }) => {
           <h3 style={{ fontSize: 15, fontWeight: 700, color: T.navy, marginBottom: 4 }}>Revenue Efficiency — Monthly</h3>
           <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Avg Revenue Per Patient, Avg Revenue Per New Patient, and Revenue Per Net Scheduled Hour</p>
           <ResponsiveContainer width="100%" height={340}>
-            <LineChart data={REVENUE_EFFICIENCY_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+            <LineChart data={ytd(REVENUE_EFFICIENCY_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke={T.divider} />
               <XAxis dataKey="month" tick={{ fontSize: 11, fontFamily: T.sans }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
@@ -1026,7 +1032,7 @@ const PerformanceView = ({ onNavigate }) => {
               <Card>
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: T.navy, marginBottom: 12 }}>Avg Syringes / Injectables Appt</h4>
                 <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={BENCH_SYRINGES_DATA} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                  <LineChart data={ytd(BENCH_SYRINGES_DATA)} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
                     <CartesianGrid vertical={false} stroke={T.divider} />
                     <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 4]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -1041,7 +1047,7 @@ const PerformanceView = ({ onNavigate }) => {
               <Card>
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: T.navy, marginBottom: 12 }}>Avg BTX Units / Botox Appt</h4>
                 <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={BENCH_BTX_DATA} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                  <LineChart data={ytd(BENCH_BTX_DATA)} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
                     <CartesianGrid vertical={false} stroke={T.divider} />
                     <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis domain={[0, 60]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -1061,7 +1067,7 @@ const PerformanceView = ({ onNavigate }) => {
             <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Injectables Efficiency — Variant 2: Peer Average</h3>
             <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your metrics (solid) vs peer group average (dashed)</p>
             <ResponsiveContainer width="100%" height={340}>
-              <ComposedChart data={BENCH_INJ_AVG_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <ComposedChart data={ytd(BENCH_INJ_AVG_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
                 <CartesianGrid vertical={false} stroke={T.divider} />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="left" orientation="left" domain={[0, 4]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} label={{ value: 'Syringes', angle: -90, position: 'insideLeft', offset: 10, style: { fontSize: 10, fill: T.muted } }} />
@@ -1080,7 +1086,7 @@ const PerformanceView = ({ onNavigate }) => {
           <BenchmarkToggleChart
             title="Injectables Efficiency — Variant 3: Toggle"
             subtitle="Click provider names to show/hide"
-            datasets={{ syringes: BENCH_SYRINGES_DATA, btx: BENCH_BTX_DATA }}
+            datasets={{ syringes: ytd(BENCH_SYRINGES_DATA), btx: ytd(BENCH_BTX_DATA) }}
             type="injectables"
           />
 
@@ -1089,9 +1095,9 @@ const PerformanceView = ({ onNavigate }) => {
             <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12 }}>Revenue Efficiency — Variant 1: Split Charts</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
               {[
-                { data: BENCH_REV_PER_PATIENT, title: 'Avg Revenue / Patient', fmt: (v) => v !== null ? '$' + Math.round(v) : '—' },
-                { data: BENCH_REV_PER_NEW, title: 'Avg Revenue / New Patient', fmt: (v) => v !== null ? '$' + Math.round(v) : '—' },
-                { data: BENCH_REV_PER_HR, title: 'Revenue / Net Sched Hr', fmt: (v) => v !== null ? '$' + Math.round(v) : '—' },
+                { data: ytd(BENCH_REV_PER_PATIENT), title: 'Avg Revenue / Patient', fmt: (v) => v !== null ? '$' + Math.round(v) : '—' },
+                { data: ytd(BENCH_REV_PER_NEW), title: 'Avg Revenue / New Patient', fmt: (v) => v !== null ? '$' + Math.round(v) : '—' },
+                { data: ytd(BENCH_REV_PER_HR), title: 'Revenue / Net Sched Hr', fmt: (v) => v !== null ? '$' + Math.round(v) : '—' },
               ].map((chart) => (
                 <Card key={chart.title}>
                   <h4 style={{ fontSize: 13, fontWeight: 700, color: T.navy, marginBottom: 12 }}>{chart.title}</h4>
@@ -1117,7 +1123,7 @@ const PerformanceView = ({ onNavigate }) => {
             <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Revenue Efficiency — Variant 2: Peer Average</h3>
             <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>Your metrics (solid) vs peer group average (dashed)</p>
             <ResponsiveContainer width="100%" height={340}>
-              <LineChart data={BENCH_EFF_AVG_DATA} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
+              <LineChart data={ytd(BENCH_EFF_AVG_DATA)} margin={{ top: 20, right: 12, left: 0, bottom: 0 }}>
                 <CartesianGrid vertical={false} stroke={T.divider} />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
@@ -1137,7 +1143,7 @@ const PerformanceView = ({ onNavigate }) => {
           <BenchmarkToggleChart
             title="Revenue Efficiency — Variant 3: Toggle"
             subtitle="Click provider names to show/hide"
-            datasets={{ revPatient: BENCH_REV_PER_PATIENT, revNew: BENCH_REV_PER_NEW, revHr: BENCH_REV_PER_HR }}
+            datasets={{ revPatient: ytd(BENCH_REV_PER_PATIENT), revNew: ytd(BENCH_REV_PER_NEW), revHr: ytd(BENCH_REV_PER_HR) }}
             type="efficiency"
           />
         </div>
